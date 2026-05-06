@@ -1,0 +1,187 @@
+import { useState } from 'react';
+import { supabase } from '../../lib/supabase.js';
+import { useT, LANGS } from '../../lib/i18n.jsx';
+import PricingScreen from '../sub/PricingScreen.jsx';
+import ThemeScreen from '../sub/ThemeScreen.jsx';
+import AccessibilityScreen from '../sub/AccessibilityScreen.jsx';
+
+const COLORS = ['#1C1611', '#2A6FDB', '#C96A3A', '#2E7D52', '#9B59B6', '#E91E8C', '#E67E22', '#7C3AED', '#5A4A3A', '#8B6F5E'];
+
+export default function ProfileTab({ session, profile, onChanged }) {
+  const { t, lang, setLang } = useT();
+  const [view, setView] = useState('main'); // main | plans | theme | a11y
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState(profile?.display_name || '');
+  const [editingColor, setEditingColor] = useState(false);
+  const [color, setColor] = useState(profile?.avatar_color || '#1C1611');
+  const [busy, setBusy] = useState(false);
+
+  if (view === 'plans') return <PricingScreen onBack={() => setView('main')} />;
+  if (view === 'theme') return <ThemeScreen onBack={() => setView('main')} />;
+  if (view === 'a11y') return <AccessibilityScreen onBack={() => setView('main')} />;
+
+  const saveName = async () => {
+    if (!name.trim() || name === profile?.display_name) {
+      setEditingName(false);
+      return;
+    }
+    setBusy(true);
+    await supabase.from('profiles').update({
+      display_name: name.trim(),
+      avatar_letter: name.trim().charAt(0).toUpperCase(),
+    }).eq('id', session.user.id);
+    onChanged && onChanged();
+    setBusy(false);
+    setEditingName(false);
+  };
+
+  const saveColor = async (c) => {
+    setColor(c);
+    setBusy(true);
+    await supabase.from('profiles').update({ avatar_color: c }).eq('id', session.user.id);
+    onChanged && onChanged();
+    setBusy(false);
+  };
+
+  const changeLang = async (newLang) => {
+    setLang(newLang);
+    if (profile?.id) {
+      await supabase.from('profiles').update({ language: newLang }).eq('id', session.user.id);
+      onChanged && onChanged();
+    }
+  };
+
+  const shareApp = async () => {
+    const url = window.location.origin;
+    const message = t('profile_referral_msg', { url });
+    if (navigator.share) {
+      try { await navigator.share({ title: 'FAMMY', text: message, url }); } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(message); alert(t('share_copied')); } catch {}
+    }
+  };
+
+  const initial = (profile?.avatar_letter || (profile?.display_name || 'U').charAt(0)).toUpperCase();
+
+  return (
+    <div className="profile-wrap">
+      <h1 className="profile-h">{t('profile_h')}</h1>
+
+      {/* Avatar */}
+      <div className="profile-section">
+        <div className="profile-row">
+          <div>
+            <div className="profile-label">{t('profile_avatar')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
+              <div className="av" style={{ width: 64, height: 64, fontSize: 26, borderRadius: 20, background: color }}>
+                {initial}
+              </div>
+            </div>
+          </div>
+          <button className="profile-btn" onClick={() => setEditingColor(!editingColor)}>
+            {editingColor ? t('close') : t('profile_change_color')}
+          </button>
+        </div>
+        {editingColor && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            {COLORS.map((c) => (
+              <button key={c} type="button" onClick={() => saveColor(c)}
+                style={{
+                  width: 32, height: 32, borderRadius: 10, background: c,
+                  border: color === c ? '3px solid var(--k)' : '1.5px solid var(--sm)',
+                }} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Nome */}
+      <div className="profile-section">
+        <div className="profile-row">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="profile-label">{t('profile_name')}</div>
+            {editingName ? (
+              <input className="input" autoFocus
+                value={name} onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile?.display_name || ''); setEditingName(false); } }} />
+            ) : (
+              <div className="profile-value">{profile?.display_name}</div>
+            )}
+          </div>
+          {editingName ? (
+            <button className="profile-btn primary" onClick={saveName} disabled={busy}>
+              {busy ? <span className="spin" /> : t('save')}
+            </button>
+          ) : (
+            <button className="profile-btn" onClick={() => setEditingName(true)}>
+              {t('profile_modify')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Email */}
+      <div className="profile-section">
+        <div className="profile-row">
+          <div>
+            <div className="profile-label">{t('profile_email')}</div>
+            <div className="profile-value" style={{ color: 'var(--km)' }}>{session.user.email}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lingua */}
+      <div className="profile-section">
+        <div className="profile-label" style={{ marginBottom: 8 }}>{t('profile_language')}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {LANGS.map((l) => (
+            <button key={l.id} onClick={() => changeLang(l.id)}
+              style={{
+                padding: '8px 14px', borderRadius: 100, border: '1.5px solid',
+                borderColor: lang === l.id ? 'var(--k)' : 'var(--sm)',
+                background: lang === l.id ? 'var(--sm)' : 'white',
+                fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+              <span style={{ fontSize: 16 }}>{l.flag}</span> {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Settings menu (Plans, Theme, A11y) */}
+      <div className="profile-section">
+        <div className="profile-label" style={{ marginBottom: 8 }}>{t('profile_settings_h')}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <SettingRow label={t('profile_plans')} onClick={() => setView('plans')} accent />
+          <SettingRow label={t('profile_theme')} onClick={() => setView('theme')} />
+          <SettingRow label={t('profile_accessibility')} onClick={() => setView('a11y')} />
+        </div>
+      </div>
+
+      {/* Referral / share FAMMY */}
+      <div className="profile-section">
+        <div className="profile-label" style={{ marginBottom: 4 }}>{t('profile_referral_h')}</div>
+        <p style={{ fontSize: 13, color: 'var(--km)', margin: '0 0 12px', lineHeight: 1.4 }}>
+          {t('profile_referral_sub')}
+        </p>
+        <button className="btn full" onClick={shareApp}>{t('profile_referral_btn')}</button>
+      </div>
+
+      <div className="profile-section" style={{ borderBottom: 'none' }}>
+        <button className="btn full danger" onClick={() => supabase.auth.signOut()}>{t('logout')}</button>
+        <p style={{ fontSize: 11, color: 'var(--km)', textAlign: 'center', marginTop: 16, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+          {t('profile_app_info')}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({ label, onClick, accent }) {
+  return (
+    <button onClick={onClick} className="setting-row" style={accent ? { borderColor: 'var(--am)', background: 'var(--amB)' } : {}}>
+      <span style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>{label}</span>
+      <span style={{ color: 'var(--kl)', fontSize: 18 }}>›</span>
+    </button>
+  );
+}

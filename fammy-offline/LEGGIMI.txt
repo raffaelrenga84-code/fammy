@@ -1,0 +1,54 @@
+==========================================
+  FAMMY — Versione offline
+==========================================
+
+ISTRUZIONI RAPIDE
+-----------------
+
+1) Doppio clic su "installa-librerie.bat"
+   (serve internet solo questa volta - dura pochi secondi)
+
+2) Doppio clic su "fammy.html"
+   Si apre nel browser e funziona.
+
+3) Da ora in poi puoi:
+   - copiare l'intera cartella su chiavetta USB
+   - inviarla in zip via email/WhatsApp/Drive
+   - usarla su qualsiasi PC SENZA internet
+   Basta che chi la riceve faccia doppio clic su fammy.html.
+
+
+COSA C'E' IN QUESTA CARTELLA
+----------------------------
+- fammy.html              -> l'app FAMMY (apri questo)
+- installa-librerie.bat   -> scarica le librerie (eseguilo una volta)
+- vendor/                 -> qui dentro vanno React, ReactDOM e Babel
+- LEGGIMI.txt             -> questo file
+
+
+DOWNLOAD MANUALE (se il .bat non funziona)
+------------------------------------------
+Se l'antivirus blocca lo script o non hai PowerShell, scarica
+manualmente questi 3 file e mettili dentro la cartella "vendor"
+con i nomi indicati:
+
+  1) https://unpkg.com/react@18.2.0/umd/react.production.min.js
+     -> salva come: vendor/react.production.min.js
+
+  2) https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js
+     -> salva come: vendor/react-dom.production.min.js
+
+  3) https://unpkg.com/@babel/standalone@7.23.0/babel.min.js
+     -> salva come: vendor/babel.min.js
+
+
+PROBLEMI?
+---------
+- Pagina vuota o messaggio "Caricamento di FAMMY..." fisso:
+  -> mancano i file in vendor/. Esegui installa-librerie.bat.
+
+- Si apre ma non vedi nulla:
+  -> apri la console del browser (F12) per vedere l'errore.
+
+- Browser troppo vecchio:
+  -> serve un browser aggiornato (Chrome, Edge, Firefox, Safari).

@@ -1,0 +1,369 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: fammy <noreply@fammy.example>
+Date: Tue, 28 Apr 2026 17:17:00 +0200
+Subject: [PATCH] feat: add ProfilePanel TSX, ical endpoint, migration
+
+---
+ src/components/ProfilePanel.tsx | 377 ++++++++++++++++++++++++++++++++++++++++++
+ api/ical/[token].ts             | 160 +++++++++++++++++++
+ migrations/20260428_add_ical_token.sql | 6 +++
+ 3 files changed, 543 insertions(+)
+ create mode 100644 src/components/ProfilePanel.tsx
+ create mode 100644 api/ical/[token].ts
+ create mode 100644 migrations/20260428_add_ical_token.sql
+
+diff --git a/src/components/ProfilePanel.tsx b/src/components/ProfilePanel.tsx
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/src/components/ProfilePanel.tsx
+@@ -0,0 +1,377 @@
++import React, { useState } from "react";
++
++export type Profile = {
++  name: string;
++  email: string;
++  role?: string;
++  avatarInitial?: string;
++};
++
++export type Family = {
++  name: string;
++  inviteCode?: string;
++};
++
++export type ProfilePanelProps = {
++  profile?: Profile;
++  family?: Family;
++  icalUrl?: string;
++  onSaveProfile?: (payload: { name: string; phone?: string; language: string }) => Promise<void>;
++  onDisconnectProvider?: (provider: string) => void;
++};
++
++export default function ProfilePanel({
++  profile = { name: "Raffael Renga", email: "raffaelrenga84@gmail.com", role: "Amministratore famiglia", avatarInitial: "R" },
++  family = { name: "Renga Family", inviteCode: "ABCD-1234" },
++  icalUrl = "https://fammy.example/api/ical/abcd1234.ics",
++  onSaveProfile = async () => {},
++  onDisconnectProvider = () => {},
++}: ProfilePanelProps) {
++  const [name, setName] = useState(profile.name);
++  const [phone, setPhone] = useState("");
++  const [language, setLanguage] = useState("Italiano");
++  const [icalEnabled, setIcalEnabled] = useState(false);
++  const [modalOpen, setModalOpen] = useState(false);
++  const [saving, setSaving] = useState(false);
++  const [toast, setToast] = useState<string | null>(null);
++
++  async function handleSave() {
++    setSaving(true);
++    try {
++      await onSaveProfile({ name, phone, language });
++      setToast("Profilo salvato");
++      setTimeout(() => setToast(null), 1600);
++    } catch {
++      setToast("Errore salvataggio");
++      setTimeout(() => setToast(null), 1600);
++    } finally {
++      setSaving(false);
++    }
++  }
++
++  async function handleCopy() {
++    try {
++      await navigator.clipboard.writeText(icalUrl);
++      setToast("Link copiato");
++      setTimeout(() => setToast(null), 1600);
++    } catch {
++      setToast("Copia non supportata");
++      setTimeout(() => setToast(null), 1600);
++    }
++  }
++
++  return (
++    <>
++      <div style={styles.container}>
++        <aside style={styles.nav} aria-label="Menu principale">
++          <div style={styles.brand}>
++            <div style={styles.logo}>F</div>
++            <div>
++              <div style={{ fontWeight: 700 }}>Fammy</div>
++              <div style={{ fontSize: 12, color: "#6b7280" }}>Account</div>
++            </div>
++          </div>
++
++          <ul style={styles.navList}>
++            <li style={{ ...styles.navItem, ...styles.navItemActive }}>Profil</li>
++            <li style={styles.navItem}>Preferenze</li>
++            <li style={styles.navItem}>Account collegati</li>
++            <li style={styles.navItem}>Famiglia</li>
++            <li style={styles.navItem}>Privacy</li>
++          </ul>
++        </aside>
++
++        <main style={styles.panel} aria-labelledby="profile-title">
++          <div style={styles.profileRow}>
++            <div style={styles.avatar}>{profile.avatarInitial ?? profile.name.charAt(0)}</div>
++            <div style={styles.profileInfo}>
++              <h1 id="profile-title" style={{ margin: 0, fontSize: 20 }}>{profile.name}</h1>
++              <p style={{ margin: "6px 0 0 0", color: "#6b7280", fontSize: 14 }}>
++                {profile.email} · <span style={{ fontSize: 13 }}>{profile.role}</span>
++              </p>
++            </div>
++
++            <div style={styles.actions} role="group" aria-label="Azioni profilo">
++              <button style={{ ...styles.btn, ...styles.ghost }} onClick={() => alert("Upload foto placeholder")}>Cambia foto</button>
++              <button style={styles.btn} onClick={() => setModalOpen(true)}>Esporta calendario</button>
++            </div>
++          </div>
++
++          <div style={styles.grid}>
++            <section>
++              <div style={styles.card}>
++                <h3>Account</h3>
++                <div style={styles.field}>
++                  <label style={styles.label}>Nome</label>
++                  <input style={styles.input} value={name} onChange={(e) => setName(e.target.value)} />
++                </div>
++                <div style={styles.field}>
++                  <label style={styles.label}>Email</label>
++                  <input style={styles.input} value={profile.email} disabled />
++                  <div style={styles.small}>L'email è gestita dall'account principale.</div>
++                </div>
++                <div style={styles.field}>
++                  <label style={styles.label}>Telefono (opzionale)</label>
++                  <input style={styles.input} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+39 3xx xxx xxxx" />
++                </div>
++
++                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
++                  <button style={styles.btn} onClick={handleSave} disabled={saving}>{saving ? "Salvo..." : "Salva"}</button>
++                  <button style={{ ...styles.btn, ...styles.ghost }} onClick={() => { setName(profile.name); setPhone(""); setLanguage("Italiano"); }}>Annulla</button>
++                </div>
++              </div>
++
++              <div style={{ ...styles.card, marginTop: 16 }}>
++                <h3>Preferenze</h3>
++                <div style={styles.field}>
++                  <label style={styles.label}>Lingua</label>
++                  <select style={styles.input} value={language} onChange={(e) => setLanguage(e.target.value)}>
++                    <option>Italiano</option>
++                    <option>English</option>
++                  </select>
++                </div>
++
++                <div style={styles.field}>
++                  <label style={styles.label}>Notifiche</label>
++                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
++                    <div
++                      role="switch"
++                      aria-checked={icalEnabled}
++                      tabIndex={0}
++                      onClick={() => setIcalEnabled(!icalEnabled)}
++                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setIcalEnabled(!icalEnabled); }}
++                      style={{ ...styles.switch, ...(icalEnabled ? styles.switchOn : {}) }}
++                    >
++                      <div style={{ ...styles.knob, ...(icalEnabled ? styles.knobOn : {}) }} />
++                    </div>
++                    <div>
++                      <div style={{ fontWeight: 600 }}>Usa calendario nativo</div>
++                      <div style={styles.small}>Ricevi promemoria tramite il feed iCal</div>
++                    </div>
++                  </div>
++
++                  <div style={{ marginTop: 10 }}>
++                    <button style={{ ...styles.linkButton }} onClick={() => setModalOpen(true)}>Esporta feed iCal</button>
++                  </div>
++                </div>
++              </div>
++            </section>
++
++            <aside>
++              <div style={styles.card}>
++                <h4>Account collegati</h4>
++                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
++                  <div style={styles.providerIcon}>G</div>
++                  <div style={{ flex: 1 }}>
++                    <div style={{ fontWeight: 600 }}>{profile.name}</div>
++                    <div style={styles.small}>Google</div>
++                  </div>
++                  <button style={{ ...styles.btn, ...styles.ghost }} onClick={() => onDisconnectProvider("google")}>Disconnetti</button>
++                </div>
++              </div>
++
++              <div style={{ ...styles.card, marginTop: 16 }}>
++                <h4>Famiglia</h4>
++                <div style={{ marginTop: 10 }}>
++                  <div style={styles.small}>Nome famiglia</div>
++                  <div style={{ fontWeight: 600, margin: "6px 0" }}>{family.name}</div>
++                  <div style={styles.small}>Codice invito: <span style={{ fontWeight: 700 }}>{family.inviteCode}</span></div>
++                  <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
++                    <button style={styles.btn}>Gestisci membri</button>
++                    <button style={{ ...styles.btn, ...styles.ghost }}>Invita</button>
++                  </div>
++                </div>
++              </div>
++            </aside>
++          </div>
++        </main>
++      </div>
++
++      {modalOpen && (
++        <div style={styles.modalBackdrop} role="dialog" aria-modal="true" onClick={() => setModalOpen(false)}>
++          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
++            <h3>Esporta feed iCal</h3>
++            <p style={styles.instructions}>Sottoscrivi questo link nel calendario del tuo iPhone o Android. Il telefono mostrerà promemoria nativi per ogni evento.</p>
++
++            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12 }}>
++              <div style={styles.inputLike}>{icalUrl}</div>
++              <button style={styles.btn} onClick={handleCopy}>Copia</button>
++            </div>
++
++            <div style={styles.instructions}>
++              <strong>iPhone</strong>: Calendario → Aggiungi abbonamento → Incolla link.<br />
++              <strong>Android</strong>: App Calendario o Google Calendar → Aggiungi abbonamento calendario → Incolla link.
++            </div>
++
++            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
++              <button style={{ ...styles.btn, ...styles.ghost }} onClick={() => setModalOpen(false)}>Chiudi</button>
++            </div>
++          </div>
++        </div>
++      )}
++
++      {toast && <div style={styles.toast}>{toast}</div>}
++    </>
++  );
++}
++
++/* Inline styles (same as wireframe) */
++const styles: { [k: string]: React.CSSProperties } = {
++  container: {
++    maxWidth: 1100,
++    margin: "28px auto",
++    padding: 20,
++    display: "grid",
++    gridTemplateColumns: "260px 1fr",
++    gap: 24,
++    fontFamily: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial',
++    background: "#f7f8fa",
++  },
++  nav: { background: "#fff", borderRadius: 12, padding: 12, boxShadow: "0 1px 2px rgba(16,24,40,0.04)", height: "fit-content" },
++  brand: { display: "flex", alignItems: "center", gap: 10, padding: "8px 6px" },
++  logo: { width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg,#6C63FF,#9b8cff)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700 },
++  navList: { listStyle: "none", padding: 8, margin: "12px 0 0 0" },
++  navItem: { display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 8, color: "#6b7280", cursor: "pointer" },
++  navItemActive: { background: "#f0efff", color: "#6C63FF", fontWeight: 600 },
++  panel: { background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 1px 2px rgba(16,24,40,0.04)" },
++  profileRow: { display: "flex", gap: 18, alignItems: "center" },
++  avatar: { width: 84, height: 84, borderRadius: "50%", background: "#e6e7ff", color: "#6C63FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700 },
++  profileInfo: {},
++  actions: { marginLeft: "auto", display: "flex", gap: 8 },
++  btn: { padding: "8px 12px", borderRadius: 10, border: "1px solid transparent", background: "#6C63FF", color: "#fff", fontWeight: 600, cursor: "pointer" },
++  ghost: { background: "transparent", color: "#6C63FF", borderColor: "#e9e7ff" },
++  grid: { display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, marginTop: 20 },
++  card: { background: "#fff", padding: 16, borderRadius: 12, border: "1px solid #f1f1f4" },
++  field: { display: "flex", flexDirection: "column", marginBottom: 12 },
++  label: { fontSize: 13, color: "#6b7280", marginBottom: 6 },
++  input: { padding: 10, borderRadius: 8, border: "1px solid #e6e7ee", fontSize: 14 },
++  small: { fontSize: 13, color: "#6b7280" },
++  switch: { width: 44, height: 26, background: "#e6e7ee", borderRadius: 999, position: "relative", cursor: "pointer", display: "inline-block" },
++  switchOn: { background: "linear-gradient(90deg,#6C63FF,#9b8cff)" },
++  knob: { width: 20, height: 20, background: "#fff", borderRadius: "50%", position: "absolute", top: 3, left: 3, transition: "all .18s ease", boxShadow: "0 1px 2px rgba(16,24,40,0.08)" },
++  knobOn: { left: 21 },
++  linkButton: { background: "transparent", border: "none", color: "#6C63FF", fontWeight: 600, cursor: "pointer", padding: 0 },
++  providerIcon: { width: 36, height: 36, borderRadius: 6, background: "#f1f3ff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#6C63FF" },
++  modalBackdrop: { position: "fixed", inset: 0, background: "rgba(2,6,23,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
++  modal: { width: "100%", maxWidth: 520, background: "#fff", borderRadius: 12, padding: 18 },
++  instructions: { fontSize: 14, color: "#6b7280", marginBottom: 12 },
++  inputLike: { flex: 1, padding: 10, borderRadius: 8, border: "1px solid #e6e7ee", background: "#fafafa", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
++  toast: { position: "fixed", right: 20, bottom: 20, background: "#111", color: "#fff", padding: "10px 14px", borderRadius: 8 },
++};
++
+diff --git a/api/ical/[token].ts b/api/ical/[token].ts
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/api/ical/[token].ts
+@@ -0,0 +1,160 @@
++import type { VercelRequest, VercelResponse } from "@vercel/node";
++import { Pool } from "pg";
++
++const pool = new Pool({ connectionString: process.env.DATABASE_URL });
++
++function formatDateToICS(dt: Date) {
++  return dt.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
++}
++
++function escapeICSText(s: string) {
++  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
++}
++
++export default async function handler(req: VercelRequest, res: VercelResponse) {
++  const { token } = req.query as { token?: string };
++  if (!token) return res.status(400).send("Missing token");
++
++  const client = await pool.connect();
++  try {
++    const fam = await client.query("SELECT id, name FROM families WHERE ical_token = $1 LIMIT 1", [token]);
++    if (fam.rowCount === 0) return res.status(404).send("Not found");
++
++    const familyId = fam.rows[0].id;
++    const events = await client.query(
++      `SELECT id, title, description, starts_at, ends_at, location
++       FROM events WHERE family_id = $1 AND canceled = false ORDER BY starts_at`,
++      [familyId]
++    );
++
++    res.setHeader("Content-Type", "text/calendar; charset=utf-8");
++    res.setHeader("Cache-Control", "public, max-age=3600");
++
++    let ics = "";
++    ics += "BEGIN:VCALENDAR\r\n";
++    ics += "VERSION:2.0\r\n";
++    ics += `PRODID:-//Fammy//EN\r\n`;
++    ics += "CALSCALE:GREGORIAN\r\n";
++
++    for (const ev of events.rows) {
++      const uid = `fammy-${ev.id}@fammy.example`;
++      const dtstart = formatDateToICS(new Date(ev.starts_at));
++      const dtend = formatDateToICS(new Date(ev.ends_at || ev.starts_at));
++      ics += "BEGIN:VEVENT\r\n";
++      ics += `UID:${uid}\r\n`;
++      ics += `SUMMARY:${escapeICSText(ev.title)}\r\n`;
++      if (ev.description) ics += `DESCRIPTION:${escapeICSText(ev.description)}\r\n`;
++      if (ev.location) ics += `LOCATION:${escapeICSText(ev.location)}\r\n`;
++      ics += `DTSTART:${dtstart}\r\n`;
++      ics += `DTEND:${dtend}\r\n`;
++      ics += "BEGIN:VALARM\r\n";
++      ics += "TRIGGER:-PT30M\r\n";
++      ics += "ACTION:DISPLAY\r\n";
++      ics += "DESCRIPTION:Reminder\r\n";
++      ics += "END:VALARM\r\n";
++      ics += "END:VEVENT\r\n";
++    }
++
++    ics += "END:VCALENDAR\r\n";
++    res.status(200).send(ics);
++  } catch (err) {
++    console.error(err);
++    res.status(500).send("Server error");
++  } finally {
++    client.release();
++  }
++}
++
+diff --git a/migrations/20260428_add_ical_token.sql b/migrations/20260428_add_ical_token.sql
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/migrations/20260428_add_ical_token.sql
+@@ -0,0 +1,6 @@
++-- Migration: add ical_token to families
++ALTER TABLE families
++ADD COLUMN IF NOT EXISTS ical_token text;
++
++-- Generate tokens for existing rows (Postgres pgcrypto)
++UPDATE families SET ical_token = gen_random_uuid()::text WHERE ical_token IS NULL;
++
+-- 
+2.34.1
