@@ -107,6 +107,7 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     await supabase.from('tasks').update({ status: 'taken' }).eq('id', task.id);
     setBusy(false);
     onChanged();
+    onClosed();
   };
 
   // Assegna a un membro specifico
@@ -130,6 +131,7 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     setBusy(false);
     setShowAssignMenu(false);
     onChanged();
+    onClosed();
   };
 
   // Rimuovi me stesso (Ho un imprevisto)
@@ -156,6 +158,7 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     }
     setBusy(false);
     onChanged();
+    onClosed();
   };
 
   const addComment = async () => {
@@ -396,9 +399,4 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
                 {busy ? <span className="spin" /> : 'Salva'}
               </button>
             </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+        
