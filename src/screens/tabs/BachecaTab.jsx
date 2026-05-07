@@ -95,27 +95,33 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
 
   return (
     <>
-      <CollapsibleSection
-        label={t('section_mine')}
-        count={myTasks.length}
-        open={openSections.mine}
-        onToggle={() => toggle('mine')}
-        empty={t('no_mine_tasks')}
-        accent="var(--am)"
-      >
-        {myTasks.length > 0 && renderTaskList(myTasks)}
-      </CollapsibleSection>
+      <div style={{ marginBottom: 24 }}>
+        <CollapsibleSection
+          label={t('section_mine')}
+          count={myTasks.length}
+          open={openSections.mine}
+          onToggle={() => toggle('mine')}
+          empty={t('no_mine_tasks')}
+          accent="var(--am)"
+          background="var(--am)"
+        >
+          {myTasks.length > 0 && renderTaskList(myTasks)}
+        </CollapsibleSection>
+      </div>
 
-      <CollapsibleSection
-        label={t('section_all')}
-        count={otherTasks.length}
-        open={openSections.all}
-        onToggle={() => toggle('all')}
-      >
-        {otherTasks.length > 0 ? renderTaskList(otherTasks) : (
-          <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>
-        )}
-      </CollapsibleSection>
+      <div style={{ marginTop: 20 }}>
+        <CollapsibleSection
+          label={t('section_all')}
+          count={otherTasks.length}
+          open={openSections.all}
+          onToggle={() => toggle('all')}
+          background="var(--ab)"
+        >
+          {otherTasks.length > 0 ? renderTaskList(otherTasks) : (
+            <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>
+          )}
+        </CollapsibleSection>
+      </div>
 
       {dones.length > 0 && (
         <CollapsibleSection
@@ -155,13 +161,21 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
   );
 }
 
-function CollapsibleSection({ label, count, open, onToggle, children, empty, accent }) {
+function CollapsibleSection({ label, count, open, onToggle, children, empty, accent, background }) {
   return (
     <div style={{ marginBottom: 4 }}>
-      <button onClick={onToggle} className="collapsible-header" style={accent ? { borderLeft: `3px solid ${accent}` } : {}}>
+      <button
+        onClick={onToggle}
+        className="collapsible-header"
+        style={{
+          borderLeft: accent ? `4px solid ${accent}` : '4px solid transparent',
+          background: background ? `${background}15` : 'transparent',
+          paddingLeft: 16,
+        }}
+      >
         <span className="collapsible-arrow" style={{ transform: open ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
-        <span className="collapsible-label">{label}</span>
-        <span className="collapsible-count">{count}</span>
+        <span className="collapsible-label" style={{ fontWeight: 600, fontSize: 14 }}>{label}</span>
+        <span className="collapsible-count" style={{ fontWeight: 700, fontSize: 12 }}>{count}</span>
       </button>
       {open && (
         count === 0
@@ -177,7 +191,7 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
     <div
       className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`}
       onClick={onClick}
-      style={task.urgent ? { borderLeft: '3px solid var(--rd)' } : {}}
+      style={task.urgent ? { borderLeft: '4px solid var(--rd)', borderRadius: 0, background: 'var(--rd)11' } : { borderRadius: 8 }}
     >
       <div className="tc-row">
         <button className="tc-check" onClick={onCheck}>
@@ -185,7 +199,7 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
         </button>
         <span className="tc-emoji">{CAT[task.category] || '📌'}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="tc-title">{task.urgent ? '🚨 ' : ''}{task.title}</div>
+          <div className="tc-title" style={task.urgent ? { color: 'var(--rd)', fontWeight: 600 } : {}}>{task.urgent ? '🚨 ' : ''}{task.title}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
             {assignees.length > 0 && (
               <span style={{
@@ -225,4 +239,7 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
   );
 }
 
-function fmtDate(
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
