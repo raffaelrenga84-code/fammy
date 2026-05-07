@@ -151,10 +151,13 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
       text: 'Ho un imprevisto — delego',
       type: 'system',
     });
-    // Se non ci sono altri assignee, cambia status a todo
+    // Se non ci sono altri assignee, cambia status a todo e marca come urgent
     const remaining = assignees.filter((a) => a.id !== me.id);
     if (remaining.length === 0) {
-      await supabase.from('tasks').update({ status: 'todo' }).eq('id', task.id);
+      await supabase.from('tasks').update({ status: 'todo', urgent: true }).eq('id', task.id);
+    } else {
+      // Anche se ci sono altri assignee, marca come urgent
+      await supabase.from('tasks').update({ urgent: true }).eq('id', task.id);
     }
     setBusy(false);
     onChanged();
@@ -395,8 +398,4 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
 
             <div className="row" style={{ marginTop: 20 }}>
               <button className="btn secondary" onClick={() => setEditing(false)}>Annulla</button>
-              <button className="btn" onClick={save} disabled={busy || !title.trim()}>
-                {busy ? <span className="spin" /> : 'Salva'}
-              </button>
-            </div>
-        
+             

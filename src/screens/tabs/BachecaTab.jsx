@@ -174,14 +174,18 @@ function CollapsibleSection({ label, count, open, onToggle, children, empty, acc
 
 function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
   return (
-    <div className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`} onClick={onClick}>
+    <div
+      className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`}
+      onClick={onClick}
+      style={task.urgent ? { borderLeft: '3px solid var(--rd)' } : {}}
+    >
       <div className="tc-row">
         <button className="tc-check" onClick={onCheck}>
           {task.status === 'done' ? '✓' : '○'}
         </button>
         <span className="tc-emoji">{CAT[task.category] || '📌'}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="tc-title">{task.title}</div>
+          <div className="tc-title">{task.urgent ? '🚨 ' : ''}{task.title}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
             {assignees.length > 0 && (
               <span style={{
@@ -221,7 +225,4 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
   );
 }
 
-function fmtDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-}
+function fmtDate(
