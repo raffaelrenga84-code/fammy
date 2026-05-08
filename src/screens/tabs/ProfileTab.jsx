@@ -13,6 +13,8 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
   const [view, setView] = useState('main'); // main | plans | theme | a11y
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(profile?.display_name || '');
+  const [editingBirthday, setEditingBirthday] = useState(false);
+  const [birthday, setBirthday] = useState(profile?.birthday || '');
   const [editingColor, setEditingColor] = useState(false);
   const [color, setColor] = useState(profile?.avatar_color || '#1C1611');
   const [busy, setBusy] = useState(false);
@@ -34,6 +36,18 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
     onChanged && onChanged();
     setBusy(false);
     setEditingName(false);
+  };
+
+  const saveBirthday = async () => {
+    if (birthday === profile?.birthday) {
+      setEditingBirthday(false);
+      return;
+    }
+    setBusy(true);
+    await supabase.from('profiles').update({ birthday: birthday || null }).eq('id', session.user.id);
+    onChanged && onChanged();
+    setBusy(false);
+    setEditingBirthday(false);
   };
 
   const saveColor = async (c) => {
@@ -119,6 +133,31 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
             </button>
           ) : (
             <button className="profile-btn" onClick={() => setEditingName(true)}>
+              {t('profile_modify')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Compleanno */}
+      <div className="profile-section">
+        <div className="profile-row">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="profile-label">🎂 {t('birthday') || 'Compleanno'}</div>
+            {editingBirthday ? (
+              <input type="date" className="input" autoFocus
+                value={birthday} onChange={(e) => setBirthday(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveBirthday(); if (e.key === 'Escape') { setBirthday(profile?.birthday || ''); setEditingBirthday(false); } }} />
+            ) : (
+              <div className="profile-value">{birthday ? new Date(birthday).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : t('not_set') || 'Non impostato'}</div>
+            )}
+          </div>
+          {editingBirthday ? (
+            <button className="profile-btn primary" onClick={saveBirthday} disabled={busy}>
+              {busy ? <span className="spin" /> : t('save')}
+            </button>
+          ) : (
+            <button className="profile-btn" onClick={() => setEditingBirthday(true)}>
               {t('profile_modify')}
             </button>
           )}
