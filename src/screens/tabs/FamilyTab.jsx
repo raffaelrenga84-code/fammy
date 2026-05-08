@@ -194,35 +194,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
         </button>
       </div>
 
-      {/* Sezione "Altre tue famiglie" + Crea nuova famiglia, collassata */}
-      <div style={{ marginTop: 8 }}>
-        <button onClick={() => setOpenOtherFamilies(!openOtherFamilies)} className="collapsible-header">
-          <span className="collapsible-arrow" style={{ transform: openOtherFamilies ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
-          <span className="collapsible-label">{t('families_other')}</span>
-          <span className="collapsible-count">{otherFamilies.length}</span>
-        </button>
-
-        {openOtherFamilies && (
-          <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {otherFamilies.length > 0 && otherFamilies.map((f) => (
-              <button key={f.id} onClick={() => onSwitchFamily(f.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: 14,
-                  background: 'white', border: '1px solid var(--sm)', borderRadius: 14,
-                  cursor: 'pointer', textAlign: 'left',
-                }}>
-                <span style={{ fontSize: 24 }}>{f.emoji}</span>
-                <span style={{ flex: 1, fontWeight: 600 }}>{f.name}</span>
-                <span style={{ color: 'var(--kl)', fontSize: 18 }}>›</span>
-              </button>
-            ))}
-            <button className="btn full secondary" onClick={onNewFamily}
-              style={{ borderStyle: 'dashed' }}>
-              {t('new_family_btn')}
-            </button>
-          </div>
-        )}
-      </div>
 
       {showAdd && (
         <AddMemberModal
