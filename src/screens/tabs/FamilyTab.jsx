@@ -15,6 +15,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
   const [showFamilyInvite, setShowFamilyInvite] = useState(false);
   const [openOtherFamilies, setOpenOtherFamilies] = useState(false);
   const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
+  const [inviteMenuOpen, setInviteMenuOpen] = useState(null); // familyId che ha il menu aperto
 
   const toggleFamilyExpanded = (familyId) => {
     setExpandedFamilies((prev) => ({ ...prev, [familyId]: !prev[familyId] }));
@@ -45,25 +46,90 @@ export default function FamilyTab({ family, members, session, families, activeFa
         {families.map((f) => {
           const familyMembers = members.filter((m) => m.family_id === f.id);
           const isExpanded = expandedFamilies[f.id] || false;
+          const inviteOpen = inviteMenuOpen === f.id;
           return (
-            <div key={f.id} style={{ marginBottom: 12 }}>
-              <button
-                onClick={() => toggleFamilyExpanded(f.id)}
-                style={{
-                  width: '100%', padding: '16px', display: 'flex', alignItems: 'center', gap: 12,
-                  background: 'white', border: '1px solid var(--sm)', borderRadius: 12, cursor: 'pointer',
-                  textAlign: 'left', transition: 'all 0.2s ease'
+            <div key={f.id} style={{ marginBottom: 12, position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: inviteOpen ? 8 : 0 }}>
+                <button
+                  onClick={() => toggleFamilyExpanded(f.id)}
+                  style={{
+                    flex: 1, padding: '16px', display: 'flex', alignItems: 'center', gap: 12,
+                    background: 'white', border: '1px solid var(--sm)', borderRadius: 12, cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.2s ease'
+                  }}>
+                  <span style={{ fontSize: 24 }}>{f.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{f.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--km)' }}>{familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}</div>
+                  </div>
+                  <span style={{
+                    fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s ease',
+                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)'
+                  }}>›</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setInviteMenuOpen(inviteOpen ? null : f.id); }}
+                  style={{
+                    padding: '10px 12px', background: 'white', border: '1px solid var(--sm)',
+                    borderRadius: 12, cursor: 'pointer', fontSize: 18, color: 'var(--ac)',
+                  }}
+                  title="Invita">
+                  💌
+                </button>
+              </div>
+
+              {/* Menu invito dropdown */}
+              {inviteOpen && (
+                <div style={{
+                  background: 'white', border: '1px solid var(--sm)', borderRadius: 12, padding: 12,
+                  marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 8,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 }}>
-                <span style={{ fontSize: 24 }}>{f.emoji}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{f.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--km)' }}>{familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase' }}>
+                    Condividi invito
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/invite/${f.invite_token || 'temp'}`);
+                      setInviteMenuOpen(null);
+                    }}
+                    style={{
+                      padding: '10px 12px', background: 'var(--ab)', border: 'none', borderRadius: 8,
+                      fontSize: 13, fontWeight: 600, color: 'var(--ac)', cursor: 'pointer',
+                    }}>
+                    🔗 Copia link
+                  </button>
+                  <button
+                    onClick={() => {
+                      const text = `Unisciti a ${f.name} su Fammy! 🎉 ${window.location.origin}/invite/${f.invite_token || 'temp'}`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+                      setInviteMenuOpen(null);
+                    }}
+                    style={{
+                      padding: '10px 12px', background: '#25D366', border: 'none', borderRadius: 8,
+                      fontSize: 13, fontWeight: 600, color: 'white', cursor: 'pointer',
+                    }}>
+                    💬 WhatsApp
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: `Unisciti a ${f.name}`,
+                          text: `Unisciti a ${f.name} su Fammy!`,
+                          url: `${window.location.origin}/invite/${f.invite_token || 'temp'}`,
+                        });
+                      }
+                      setInviteMenuOpen(null);
+                    }}
+                    style={{
+                      padding: '10px 12px', background: 'var(--ab)', border: 'none', borderRadius: 8,
+                      fontSize: 13, fontWeight: 600, color: 'var(--ac)', cursor: 'pointer',
+                    }}>
+                    📤 Condividi
+                  </button>
                 </div>
-                <span style={{
-                  fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s ease',
-                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)'
-                }}>›</span>
-              </button>
+              )}
 
               {isExpanded && (
                 <div className="list" style={{ marginTop: 8 }}>
