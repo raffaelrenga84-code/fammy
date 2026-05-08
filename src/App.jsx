@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { supabase } from './lib/supabase.js';
 import { I18nProvider, detectBrowserLang } from './lib/i18n.jsx';
 import { applyTheme, getCurrentTheme } from './screens/sub/ThemeScreen.jsx';
@@ -115,5 +116,10 @@ export default function App() {
     );
   }
 
-  return <I18nProvider initialLang={lang}>{content}</I18nProvider>;
+  return (
+    <I18nProvider initialLang={lang}>
+      {content}
+      <Analytics />
+    </I18nProvider>
+  );
 }
