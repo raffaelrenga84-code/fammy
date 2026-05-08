@@ -86,14 +86,15 @@ export default function UpdateBanner({ onDismiss }) {
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, var(--gn) 0%, #2d7a4f 100%)',
+        background: 'linear-gradient(135deg, var(--am) 0%, var(--tc) 100%)',
         color: 'white',
-        padding: '14px 16px',
+        padding: '16px 16px',
         borderRadius: '12px 12px 0 0',
         margin: '-16px -16px 16px -16px',
         fontSize: 14,
-        lineHeight: 1.5,
+        lineHeight: 1.6,
         animation: 'slideDown 0.3s ease-out',
+        boxShadow: '0 4px 12px rgba(232, 165, 0, 0.2)',
       }}
     >
       <style>{`
@@ -111,23 +112,26 @@ export default function UpdateBanner({ onDismiss }) {
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <span style={{ fontSize: 20 }}>✨</span>
         <div style={{ flex: 1 }}>
-          <strong style={{ display: 'block', marginBottom: 4 }}>App aggiornata!</strong>
-          <div style={{ fontSize: 12, opacity: 0.95, marginBottom: 8 }}>
+          <strong style={{ display: 'block', marginBottom: 4, fontSize: 16, fontWeight: 700 }}>✨ App aggiornata!</strong>
+          <div style={{ fontSize: 13, opacity: 0.95, marginBottom: 10, lineHeight: 1.4 }}>
             Nuove funzionalità e miglioramenti disponibili.
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
               onClick={handleReload}
               style={{
-                background: 'rgba(255,255,255,0.3)',
-                border: 'none',
+                background: 'rgba(255,255,255,0.25)',
+                border: '1px solid rgba(255,255,255,0.4)',
                 color: 'white',
-                padding: '6px 12px',
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 600,
+                padding: '8px 14px',
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 700,
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
+              onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.35)'}
+              onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.25)'}
             >
               🔄 Ricarica ora
             </button>
@@ -135,13 +139,14 @@ export default function UpdateBanner({ onDismiss }) {
               onClick={handleDismiss}
               style={{
                 background: 'transparent',
-                border: 'none',
+                border: '1px solid rgba(255,255,255,0.3)',
                 color: 'white',
-                padding: '6px 12px',
-                fontSize: 12,
+                padding: '8px 14px',
+                borderRadius: 10,
+                fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
-                opacity: 0.8,
+                opacity: 0.85,
               }}
             >
               Dopo
