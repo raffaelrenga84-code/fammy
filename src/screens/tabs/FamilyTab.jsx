@@ -75,7 +75,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
                     display: 'flex', alignItems: 'center', gap: 6,
                   }}
                   title="Invita">
-                  💌 Invia
+                  💌 Invita
                 </button>
               </div>
 
