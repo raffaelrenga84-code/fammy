@@ -38,6 +38,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
   const [attachments, setAttachments] = useState([]);
   const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
   const [expandRecurring, setExpandRecurring] = useState(false);
+  const [onlyForMe, setOnlyForMe] = useState(false); // Solo promemoria personale
 
   // Membri raggruppati per famiglia
   const byFamily = families.map((f) => ({
@@ -205,7 +206,21 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                   {t('assignee_multi_hint')}
                 </div>
 
-                <div style={{ marginBottom: 16 }}>
+                {/* Toggle "Solo per me" */}
+                <button type="button" onClick={() => {
+                  setOnlyForMe(!onlyForMe);
+                  if (!onlyForMe) setAssignees([]); // Pulisci assegnazioni
+                }}
+                  style={{
+                    width: '100%', marginBottom: 16, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--sm)',
+                    background: onlyForMe ? 'var(--ac)' : 'white',
+                    color: onlyForMe ? 'white' : 'var(--k)',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}>
+                  {onlyForMe ? '✓ Solo per me' : '+ Solo per me'}
+                </button>
+
+                <div style={{ marginBottom: 16, opacity: onlyForMe ? 0.5 : 1, pointerEvents: onlyForMe ? 'none' : 'auto' }}>
                   {byFamily.map((g) => {
                     const ids = g.members.map((m) => m.id);
                     const allSelected = ids.every((id) => assignees.includes(id));
@@ -268,6 +283,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                       </div>
                     );
                   })}
+                </div>
                 </div>
               </div>
 

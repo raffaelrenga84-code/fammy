@@ -14,17 +14,29 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
   const [customAmounts, setCustomAmounts] = useState({}); // {member_id: number}
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [expandFamily, setExpandFamily] = useState(false); // tendina famiglia aperta/chiusa
+  const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
   const [attachments, setAttachments] = useState([]); // {file, preview, name}
 
   // Filtra members della famiglia selezionata
   const familyMembers = members.filter((m) => m.family_id === selectedFamily);
 
-  // Membri raggruppati per famiglia (solo per lo split, mostra solo la famiglia selezionata)
-  const byFamily = selectedFamily ? [{
+  // Membri raggruppati per famiglia
+  // In vista "Tutte" (familyId=null): mostra tutte le famiglie
+  // Altrimenti: mostra solo la famiglia selezionata
+  const byFamily = !familyId ? families.map((f) => ({
+    family: f,
+    members: members.filter((m) => m.family_id === f.id),
+  })) : selectedFamily ? [{
     family: families.find((f) => f.id === selectedFamily),
     members: familyMembers,
   }] : [];
+
+  const toggleExpandFamily = (familyId) => {
+    setExpandedFamilies((prev) => ({
+      ...prev,
+      [familyId]: !prev[familyId],
+    }));
+  };
 
   const totalAmount = parseFloat((amount || '0').replace(',', '.')) || 0;
 
@@ -139,7 +151,8 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
         <p className="modal-sub">{t('addexpense_sub')}</p>
 
         <form onSubmit={submit}>
-          {!familyId && families.length > 1 && (
+          {/* Dropdown famiglia solo se in single-family view */}
+          {familyId && families.length > 1 && (
             <div style={{ marginBottom: 16 }}>
               <label htmlFor="family">{t('addexpense_family') || 'Famiglia'}</label>
               <select id="family" className="input"
@@ -195,6 +208,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
 
             {/* Selezione membri - TENDINA PER FAMIGLIA */}
             {byFamily.length > 0 && byFamily.map((g) => {
+              const isExpanded = expandedFamilies[g.family.id] || false;
               const selectedCount = g.members.filter((m) => splitMembers.includes(m.id)).length;
               const allSelected = g.members.length > 0 && g.members.every((m) => splitMembers.includes(m.id));
 
@@ -202,11 +216,11 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                 <div key={g.family.id} style={{ marginBottom: 8, border: '1px solid var(--sm)', borderRadius: 12, overflow: 'hidden', background: 'white' }}>
                   {/* Header tendina */}
                   <button type="button"
-                    onClick={() => setExpandFamily(!expandFamily)}
+                    onClick={() => toggleExpandFamily(g.family.id)}
                     style={{
                       width: '100%', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8,
                       border: 'none', background: 'white', cursor: 'pointer', textAlign: 'left',
-                      borderBottom: expandFamily ? '1px solid var(--sm)' : 'none',
+                      borderBottom: isExpanded ? '1px solid var(--sm)' : 'none',
                     }}>
                     <span style={{ fontSize: 20 }}>{g.family.emoji}</span>
                     <div style={{ flex: 1 }}>
@@ -215,7 +229,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                         {selectedCount > 0 ? `${selectedCount}/${g.members.length} selezionati` : 'Nessuno selezionato'}
                       </div>
                     </div>
-                    <span style={{ fontSize: 18, color: 'var(--km)', transition: 'transform 0.2s', transform: expandFamily ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
+                    <span style={{ fontSize: 18, color: 'var(--km)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
                   </button>
 
                   {/* Seleziona tutti - SEMPRE VISIBILE */}
@@ -230,7 +244,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                   </button>
 
                   {/* Contenuto tendina */}
-                  {expandFamily && (
+                  {isExpanded && (
                     <div style={{ padding: 10, background: 'var(--ab)', borderTop: '1px solid var(--sm)' }}>
                       {/* Membri singoli */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
