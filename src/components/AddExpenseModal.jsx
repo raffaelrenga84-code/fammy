@@ -218,20 +218,20 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                     <span style={{ fontSize: 18, color: 'var(--km)', transition: 'transform 0.2s', transform: expandFamily ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
                   </button>
 
+                  {/* Seleziona tutti - SEMPRE VISIBILE */}
+                  <button type="button" onClick={() => toggleAllMembers(g.members)}
+                    style={{
+                      width: '100%', padding: '8px 12px', borderRadius: 0, border: 'none', borderBottom: '1px solid var(--sm)',
+                      background: allSelected ? 'var(--ac)' : 'var(--ab)',
+                      color: allSelected ? 'white' : 'var(--k)',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    }}>
+                    {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
+                  </button>
+
                   {/* Contenuto tendina */}
                   {expandFamily && (
                     <div style={{ padding: 10, background: 'var(--ab)', borderTop: '1px solid var(--sm)' }}>
-                      {/* Seleziona tutti */}
-                      <button type="button" onClick={() => toggleAllMembers(g.members)}
-                        style={{
-                          width: '100%', marginBottom: 8, padding: '6px 8px', borderRadius: 8, border: '1.5px solid var(--sm)',
-                          background: allSelected ? 'var(--k)' : 'white',
-                          color: allSelected ? 'white' : 'var(--k)',
-                          fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                        }}>
-                        {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
-                      </button>
-
                       {/* Membri singoli */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {g.members.map((m) => {
