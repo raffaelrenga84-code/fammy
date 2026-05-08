@@ -284,7 +284,6 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                     );
                   })}
                 </div>
-                </div>
               </div>
 
               <div className="row" style={{ marginTop: 20 }}>
