@@ -14,6 +14,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
   const [customAmounts, setCustomAmounts] = useState({}); // {member_id: number}
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [expandFamily, setExpandFamily] = useState(false); // tendina famiglia aperta/chiusa
 
   // Filtra members della famiglia selezionata
   const familyMembers = members.filter((m) => m.family_id === selectedFamily);
@@ -37,6 +38,16 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
 
   const toggleSplitMember = (id) => {
     setSplitMembers((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  const toggleAllMembers = (members) => {
+    const ids = members.map((m) => m.id);
+    const allSelected = ids.every((id) => splitMembers.includes(id));
+    if (allSelected) {
+      setSplitMembers((prev) => prev.filter((x) => !ids.includes(x)));
+    } else {
+      setSplitMembers((prev) => [...new Set([...prev, ...ids])]);
+    }
   };
 
   const submit = async (e) => {
@@ -120,8 +131,10 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
           {/* Split section */}
           <div style={{ marginTop: 20, padding: 14, background: 'var(--ab)', borderRadius: 14, border: '1px solid var(--sm)' }}>
             <label style={{ marginBottom: 4 }}>{t('expenses_split_label')}</label>
-            <div style={{ fontSize: 11, color: 'var(--km)', marginBottom: 8, lineHeight: 1.4 }}>
-              {t('expenses_split_hint')}
+            <div style={{ fontSize: 11, color: 'var(--km)', marginBottom: 12, lineHeight: 1.4 }}>
+              {splitMembers.length === 0
+                ? '💡 Se non selezioni nessuno, questa spesa rimarrà solo nel tuo promemoria personale.'
+                : t('expenses_split_hint')}
             </div>
 
             {/* Modalità split */}
@@ -134,29 +147,64 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
               </div>
             )}
 
-            {/* Selezione membri raggruppati per famiglia */}
-            <div style={{ maxHeight: 280, overflowY: 'auto', marginBottom: 8 }}>
-              {byFamily.map((g) => (
-                <div key={g.family.id} style={{ marginBottom: 12, padding: 10, background: 'white', border: '1px solid var(--sm)', borderRadius: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--km)', marginBottom: 8 }}>
-                    {g.family.emoji} {g.family.name}
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {g.members.map((m) => {
-                      const selected = splitMembers.includes(m.id);
-                      return (
-                        <button key={m.id} type="button" onClick={() => toggleSplitMember(m.id)}
-                          style={chipMember(selected, m)}>
-                          {selected && <span>✓ </span>}
-                          <Avatar m={m} small />
-                          {m.name}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {/* Selezione membri - TENDINA PER FAMIGLIA */}
+            {byFamily.length > 0 && byFamily.map((g) => {
+              const selectedCount = g.members.filter((m) => splitMembers.includes(m.id)).length;
+              const allSelected = g.members.length > 0 && g.members.every((m) => splitMembers.includes(m.id));
+
+              return (
+                <div key={g.family.id} style={{ marginBottom: 8, border: '1px solid var(--sm)', borderRadius: 12, overflow: 'hidden', background: 'white' }}>
+                  {/* Header tendina */}
+                  <button type="button"
+                    onClick={() => setExpandFamily(!expandFamily)}
+                    style={{
+                      width: '100%', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8,
+                      border: 'none', background: 'white', cursor: 'pointer', textAlign: 'left',
+                      borderBottom: expandFamily ? '1px solid var(--sm)' : 'none',
+                    }}>
+                    <span style={{ fontSize: 20 }}>{g.family.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 12 }}>{g.family.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--km)' }}>
+                        {selectedCount > 0 ? `${selectedCount}/${g.members.length} selezionati` : 'Nessuno selezionato'}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 18, color: 'var(--km)', transition: 'transform 0.2s', transform: expandFamily ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
+                  </button>
+
+                  {/* Contenuto tendina */}
+                  {expandFamily && (
+                    <div style={{ padding: 10, background: 'var(--ab)', borderTop: '1px solid var(--sm)' }}>
+                      {/* Seleziona tutti */}
+                      <button type="button" onClick={() => toggleAllMembers(g.members)}
+                        style={{
+                          width: '100%', marginBottom: 8, padding: '6px 8px', borderRadius: 8, border: '1.5px solid var(--sm)',
+                          background: allSelected ? 'var(--k)' : 'white',
+                          color: allSelected ? 'white' : 'var(--k)',
+                          fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        }}>
+                        {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
+                      </button>
+
+                      {/* Membri singoli */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {g.members.map((m) => {
+                          const selected = splitMembers.includes(m.id);
+                          return (
+                            <button key={m.id} type="button" onClick={() => toggleSplitMember(m.id)}
+                              style={chipMember(selected, m)}>
+                              {selected && <span>✓ </span>}
+                              <Avatar m={m} small />
+                              {m.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
 
             {/* Riepilogo split */}
             {splitMembers.length > 0 && splitMode === 'equal' && totalAmount > 0 && (
