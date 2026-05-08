@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
 import Avatar from '../../components/Avatar.jsx';
+import BirthdayReminder from '../../components/BirthdayReminder.jsx';
 import AddTaskModal from '../../components/AddTaskModal.jsx';
 import TaskDetailModal from '../../components/TaskDetailModal.jsx';
 
@@ -96,6 +97,9 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
 
   return (
     <>
+      {/* Reminder di compleanno il giorno prima */}
+      <BirthdayReminder members={members} session={session} />
+
       <div style={{ marginBottom: 24 }}>
         <CollapsibleSection
           label={t('section_mine')}

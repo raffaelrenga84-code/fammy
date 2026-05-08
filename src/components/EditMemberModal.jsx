@@ -8,6 +8,7 @@ export default function EditMemberModal({ member, onClose, onSaved }) {
   const [name, setName] = useState(member.name);
   const [role, setRole] = useState(member.role || 'altro');
   const [color, setColor] = useState(member.avatar_color || COLORS[0]);
+  const [birthDate, setBirthDate] = useState(member.birth_date || '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -20,6 +21,7 @@ export default function EditMemberModal({ member, onClose, onSaved }) {
       role,
       avatar_color: color,
       avatar_letter: name.trim().charAt(0).toUpperCase(),
+      birth_date: birthDate || null,
     }).eq('id', member.id);
     if (error) { setErr(error.message); setBusy(false); }
     else onSaved && onSaved();
@@ -49,6 +51,12 @@ export default function EditMemberModal({ member, onClose, onSaved }) {
                   }}>{r}</button>
               ))}
             </div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <label htmlFor="birthDate">📅 Data di nascita (per compleanni)</label>
+            <input id="birthDate" type="date" className="input"
+              value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
           </div>
 
           <div style={{ marginTop: 16 }}>
