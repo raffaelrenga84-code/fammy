@@ -19,8 +19,9 @@ CREATE POLICY "Users can view task attachments in their families"
   USING (
     EXISTS (
       SELECT 1 FROM tasks t
-      JOIN family_members fm ON t.family_id = fm.family_id
-      WHERE fm.user_id = auth.uid()
+      WHERE t.family_id IN (
+        SELECT family_id FROM members WHERE user_id = auth.uid()
+      )
       AND t.id = task_attachments.task_id
     )
   );
@@ -30,8 +31,9 @@ CREATE POLICY "Users can insert task attachments for tasks in their families"
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM tasks t
-      JOIN family_members fm ON t.family_id = fm.family_id
-      WHERE fm.user_id = auth.uid()
+      WHERE t.family_id IN (
+        SELECT family_id FROM members WHERE user_id = auth.uid()
+      )
       AND t.id = task_attachments.task_id
     )
   );
@@ -41,8 +43,9 @@ CREATE POLICY "Users can delete task attachments they created"
   USING (
     EXISTS (
       SELECT 1 FROM tasks t
-      JOIN family_members fm ON t.family_id = fm.family_id
-      WHERE fm.user_id = auth.uid()
+      WHERE t.family_id IN (
+        SELECT family_id FROM members WHERE user_id = auth.uid()
+      )
       AND t.id = task_attachments.task_id
     )
   );
