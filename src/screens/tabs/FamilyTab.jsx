@@ -5,15 +5,14 @@ import Avatar from '../../components/Avatar.jsx';
 import AddMemberModal from '../../components/AddMemberModal.jsx';
 import EditMemberModal from '../../components/EditMemberModal.jsx';
 import EditFamilyModal from '../../components/EditFamilyModal.jsx';
-import InviteShareModal from '../../components/InviteShareModal.jsx';
+import FamilyInviteModal from '../../components/FamilyInviteModal.jsx';
 
 export default function FamilyTab({ family, members, session, families, activeFamily, isAll, onSwitchFamily, onNewFamily, onChanged }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [editingFamily, setEditingFamily] = useState(false);
-  const [invitingMember, setInvitingMember] = useState(null);
-  const [showInviteGeneric, setShowInviteGeneric] = useState(false);
+  const [showFamilyInvite, setShowFamilyInvite] = useState(false);
   const [openOtherFamilies, setOpenOtherFamilies] = useState(false);
   const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
 
@@ -75,7 +74,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
                       isMe={m.user_id === session.user.id}
                       onEdit={() => setEditingMember(m)}
                       onRemove={() => removeMember(m)}
-                      onInvite={() => setInvitingMember(m)}
+                      onInvite={() => setShowFamilyInvite(true)}
                     />
                   ))}
                 </div>
@@ -121,7 +120,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
         <button className="btn full secondary" onClick={() => setShowAdd(true)}>
           + {t('addmember_h')}
         </button>
-        <button className="btn full" onClick={() => setShowInviteGeneric(true)}>
+        <button className="btn full" onClick={() => setShowFamilyInvite(true)}>
           {t('family_invite_link')}
         </button>
       </div>
@@ -181,23 +180,11 @@ export default function FamilyTab({ family, members, session, families, activeFa
         />
       )}
 
-      {invitingMember && (
-        <InviteShareModal
-          familyId={family.id}
-          familyName={family.name}
-          member={invitingMember}
+      {showFamilyInvite && (
+        <FamilyInviteModal
+          family={family}
           session={session}
-          onClose={() => setInvitingMember(null)}
-        />
-      )}
-
-      {showInviteGeneric && (
-        <InviteShareModal
-          familyId={family.id}
-          familyName={family.name}
-          member={null}
-          session={session}
-          onClose={() => setShowInviteGeneric(false)}
+          onClose={() => setShowFamilyInvite(false)}
         />
       )}
     </>
