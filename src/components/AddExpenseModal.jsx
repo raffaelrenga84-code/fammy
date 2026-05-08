@@ -15,6 +15,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [expandFamily, setExpandFamily] = useState(false); // tendina famiglia aperta/chiusa
+  const [attachments, setAttachments] = useState([]); // {file, preview, name}
 
   // Filtra members della famiglia selezionata
   const familyMembers = members.filter((m) => m.family_id === selectedFamily);
@@ -50,6 +51,26 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
     }
   };
 
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setAttachments((prev) => [...prev, {
+          file,
+          preview: evt.target.result,
+          name: file.name,
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!totalAmount || totalAmount <= 0) return;
@@ -81,6 +102,31 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
       }));
       const { error: e2 } = await supabase.from('expense_shares').insert(shares);
       if (e2) { setErr(e2.message); setBusy(false); return; }
+    }
+
+    // Upload allegati
+    if (attachments.length > 0) {
+      for (const att of attachments) {
+        const timestamp = Date.now();
+        const fileName = `${timestamp}-${att.file.name}`;
+        const filePath = `expenses/${expense.id}/${fileName}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from('expense-attachments')
+          .upload(filePath, att.file);
+
+        if (!uploadErr) {
+          try {
+            await supabase.from('expense_attachments').insert({
+              expense_id: expense.id,
+              file_path: filePath,
+              file_name: att.file.name,
+            });
+          } catch (dbErr) {
+            console.warn('expense_attachments table not yet created:', dbErr);
+          }
+        }
+      }
     }
 
     onCreated && onCreated();
@@ -234,6 +280,43 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                   color: Math.abs(customTotal - totalAmount) < 0.01 ? 'var(--gn)' : 'var(--rd)', fontWeight: 600 }}>
                   {t('expenses_split_remaining')}: € {(totalAmount - customTotal).toFixed(2)}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Foto/Allegati */}
+          <div style={{ marginTop: 20 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <span>📸 Allega foto <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
+            </label>
+            <input type="file" id="expense-file-input" multiple accept="image/*" capture
+              onChange={handleFileSelect}
+              style={{ display: 'none' }} />
+            <button type="button" onClick={() => document.getElementById('expense-file-input').click()}
+              style={{
+                width: '100%', padding: 14, borderRadius: 12, border: '2px dashed var(--sm)',
+                background: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                color: 'var(--ac)', transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => e.target.style.borderColor = 'var(--ac)'}
+              onMouseLeave={(e) => e.target.style.borderColor = 'var(--sm)'}>
+              📷 Scatta o allega Foto
+            </button>
+
+            {attachments.length > 0 && (
+              <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 8 }}>
+                {attachments.map((att, idx) => (
+                  <div key={idx} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--sm)' }}>
+                    <img src={att.preview} style={{ width: '100%', height: '100%', objectFit: 'cover', aspectRatio: '1' }} alt={`Attachment ${idx}`} />
+                    <button type="button" onClick={() => removeAttachment(idx)}
+                      style={{
+                        position: 'absolute', top: 2, right: 2, width: 20, height: 20,
+                        borderRadius: '50%', background: 'var(--rd)', color: 'white',
+                        border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>✕</button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
