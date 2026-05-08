@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
+import { createBirthdayEventData } from '../lib/birthdayUtils.js';
 
 const ROLES = ['nonno', 'nonna', 'mamma', 'papà', 'figlio', 'figlia', 'fratello', 'sorella', 'zio', 'zia', 'cugino', 'cugina', 'altro', 'tu'];
 const COLORS = ['#1C1611', '#2A6FDB', '#C96A3A', '#2E7D52', '#9B59B6', '#E91E8C', '#E67E22', '#7C3AED', '#5A4A3A', '#8B6F5E'];
@@ -16,6 +17,8 @@ export default function EditMemberModal({ member, onClose, onSaved }) {
     e.preventDefault();
     if (!name.trim()) return;
     setBusy(true); setErr('');
+
+    // Update member
     const { error } = await supabase.from('members').update({
       name: name.trim(),
       role,
@@ -23,8 +26,27 @@ export default function EditMemberModal({ member, onClose, onSaved }) {
       avatar_letter: name.trim().charAt(0).toUpperCase(),
       birth_date: birthDate || null,
     }).eq('id', member.id);
-    if (error) { setErr(error.message); setBusy(false); }
-    else onSaved && onSaved();
+
+    if (error) { setErr(error.message); setBusy(false); return; }
+
+    // If birthDate is provided and changed, create or update birthday event
+    if (birthDate && birthDate !== member.birth_date) {
+      const eventData = createBirthdayEventData({ ...member, name: name.trim(), birth_date: birthDate });
+      if (eventData && member.family_id) {
+        const { error: eventError } = await supabase.from('events').insert({
+          family_id: member.family_id,
+          title: eventData.title,
+          starts_at: eventData.starts_at,
+          category: eventData.category,
+          is_recurring: eventData.is_recurring,
+          recurrence_rule: eventData.recurrence_rule,
+          created_by: member.id,
+        });
+        if (eventError) console.warn('Birthday event creation warning:', eventError.message);
+      }
+    }
+
+    onSaved && onSaved();
   };
 
   return (

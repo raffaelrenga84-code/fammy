@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabase.js';
+import { isBirthdayTomorrow } from './birthdayUtils.js';
 
 const NOTIFICATION_CHECK_INTERVAL = 60000; // 1 minuto
 
@@ -9,8 +10,9 @@ const NOTIFICATIONS_ENABLED_KEY = 'fammy_notifications_enabled';
  * Hook per gestire le notifiche push per gli eventi
  * - Notifiche 30 minuti prima dei tuoi eventi
  * - Notifiche quando nuovi eventi sono creati nella famiglia
+ * - Notifiche il giorno prima dei compleanni
  */
-export function useEventNotifications(session, profile, families, events, taskAssignees) {
+export function useEventNotifications(session, profile, families, events, taskAssignees, members = []) {
   const [notificationPermission, setNotificationPermission] = useState(Notification?.permission || 'default');
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     const saved = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
@@ -128,6 +130,53 @@ export function useEventNotifications(session, profile, families, events, taskAs
     };
   }, [families, notificationPermission, session?.user?.id, notificationsEnabled]);
 
+  // Monitora i compleanni e programma le notifiche il giorno prima
+  useEffect(() => {
+    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled || !members || members.length === 0) {
+      return;
+    }
+
+    // Trova i compleanni domani
+    const birthdaysTomorrow = members.filter((member) => {
+      // Non notificare il compleanno della persona stessa
+      if (member.user_id === session.user.id) return false;
+      return isBirthdayTomorrow(member.birth_date);
+    });
+
+    // Programma notifiche per ogni compleanno domani
+    birthdaysTomorrow.forEach((member) => {
+      const notificationKey = `birthday-${member.id}`;
+
+      // Evita notifiche duplicate
+      if (scheduledNotificationsRef.current.has(notificationKey)) {
+        return;
+      }
+
+      // Programma per domani mattina alle 9:00
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+
+      const now = new Date();
+      if (tomorrow > now) {
+        const delay = tomorrow.getTime() - now.getTime();
+        const timeoutId = setTimeout(() => {
+          showBirthdayNotification(member);
+          scheduledNotificationsRef.current.delete(notificationKey);
+        }, delay);
+
+        scheduledNotificationsRef.current.set(notificationKey, timeoutId);
+      }
+    });
+
+    return () => {
+      // Cleanup
+      scheduledNotificationsRef.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+    };
+  }, [members, notificationPermission, session?.user?.id, notificationsEnabled]);
+
   return {
     notificationPermission,
     notificationsEnabled,
@@ -183,6 +232,26 @@ function showNewEventNotification(event, family) {
     icon: '/icon.png',
     badge: '/icon.png',
     tag: `new-event-${event.id}`,
+    requireInteraction: false,
+  });
+
+  notification.addEventListener('click', () => {
+    window.focus();
+    notification.close();
+  });
+}
+
+/**
+ * Mostra una notifica per un compleanno domani
+ */
+function showBirthdayNotification(member) {
+  if (!('Notification' in window)) return;
+
+  const notification = new Notification(`🎂 Compleanno domani!`, {
+    body: `È il compleanno di ${member.name}! 🎉`,
+    icon: '/icon.png',
+    badge: '/icon.png',
+    tag: `birthday-${member.id}`,
     requireInteraction: false,
   });
 

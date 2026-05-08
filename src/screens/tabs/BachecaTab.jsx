@@ -98,7 +98,7 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
   return (
     <>
       {/* Reminder di compleanno il giorno prima */}
-      <BirthdayReminder members={members} session={session} />
+      <BirthdayReminder members={members} session={session} familyId={familyId} families={families} />
 
       <div style={{ marginBottom: 24 }}>
         <CollapsibleSection

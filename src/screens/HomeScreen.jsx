@@ -29,8 +29,8 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
   });
   const [showUpdateBanner, setShowUpdateBanner] = useState(true); // Controllato da UpdateBanner
 
-  // Attiva le notifiche push per gli eventi
-  const notificationControl = useEventNotifications(session, profile, families, events, taskAssignees);
+  // Attiva le notifiche push per gli eventi e compleanni
+  const notificationControl = useEventNotifications(session, profile, families, events, taskAssignees, members);
 
   useEffect(() => {
     if (activeFamily !== 'all' && !families.find((f) => f.id === activeFamily) && families.length > 0) {

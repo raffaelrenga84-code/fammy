@@ -93,7 +93,10 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         {/* Header con indicatore di step */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <button type="button" onClick={onClose} className="link-btn" style={{ fontSize: 20 }}>‹</button>
+          {step === 1 && (
+            <button type="button" onClick={() => onClose()} className="link-btn" style={{ fontSize: 20 }}>‹</button>
+          )}
+          {step > 1 && <div style={{ width: 20 }} />}
           <h2 style={{ flex: 1, margin: 0 }}>{t('addtask_h')}</h2>
           <span style={{ fontSize: 12, color: 'var(--km)', fontWeight: 600 }}>{step}/3</span>
         </div>
@@ -106,20 +109,6 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
               <input id="title" className="input" autoFocus
                 placeholder={t(`addtask_title_ph_${category}`)}
                 value={title} onChange={(e) => setTitle(e.target.value)} />
-
-              {families.length > 1 && (
-                <div style={{ marginTop: 16 }}>
-                  <label>Famiglia</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {families.map((f) => (
-                      <button key={f.id} type="button" onClick={() => setTaskFamily(f.id)}
-                        style={chipStyle(taskFamily === f.id)}>
-                        {f.emoji} {f.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div style={{ marginTop: 20 }}>
                 <label>{t('addtask_cat_label')}</label>
@@ -218,25 +207,48 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
 
               <div style={{ marginTop: 20, padding: 14, background: 'var(--ab)', borderRadius: 14, border: '1px solid var(--sm)' }}>
                 <label style={{ marginBottom: 4 }}>{t('repeat_label')} <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></label>
-                <div style={{ fontSize: 11, color: 'var(--km)', marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--km)', marginBottom: 12 }}>
                   {t('repeat_hint')}
                 </div>
-                <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between' }}>
-                  {Array.isArray(weekdays) && weekdays.map((w, idx) => {
-                    const selected = recurringDays.includes(idx);
-                    return (
-                      <button key={idx} type="button" onClick={() => toggleDay(idx)}
-                        title={Array.isArray(fullWeekdays) ? fullWeekdays[idx] : ''}
-                        style={{
-                          width: 36, height: 36, borderRadius: 50, border: '1.5px solid',
-                          borderColor: selected ? 'var(--k)' : 'var(--sm)',
-                          background: selected ? 'var(--k)' : 'white',
-                          color: selected ? 'white' : 'var(--k)',
-                          fontSize: 12, fontWeight: 700,
-                        }}>{w}</button>
-                    );
-                  })}
+
+                {/* Weekday buttons */}
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 10, color: 'var(--km)', marginBottom: 6, fontWeight: 600 }}>Giorni della settimana</div>
+                  <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between' }}>
+                    {Array.isArray(weekdays) && weekdays.map((w, idx) => {
+                      const selected = recurringDays.includes(idx);
+                      return (
+                        <button key={idx} type="button" onClick={() => toggleDay(idx)}
+                          title={Array.isArray(fullWeekdays) ? fullWeekdays[idx] : ''}
+                          style={{
+                            flex: 1, height: 32, borderRadius: 6, border: '1.5px solid',
+                            borderColor: selected ? 'var(--k)' : 'var(--sm)',
+                            background: selected ? 'var(--k)' : 'white',
+                            color: selected ? 'white' : 'var(--k)',
+                            fontSize: 11, fontWeight: 700,
+                          }}>{w}</button>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Monthly calendar */}
+                <div>
+                  <div style={{ fontSize: 10, color: 'var(--km)', marginBottom: 6, fontWeight: 600 }}>
+                    Oppure seleziona specifici giorni del mese
+                  </div>
+                  <MonthCalendarPicker
+                    selectedDays={recurringDays.filter((d) => d > 6)}
+                    onToggleDay={(day) => {
+                      setRecurringDays((prev) =>
+                        prev.includes(day)
+                          ? prev.filter((x) => x !== day)
+                          : [...prev, day].sort((a,b) => a-b)
+                      );
+                    }}
+                  />
+                </div>
+
                 {recurringDays.length > 0 && (
                   <div style={{ marginTop: 12 }}>
                     <label htmlFor="until" style={{ fontSize: 11, color: 'var(--km)' }}>{t('repeat_until')}</label>
@@ -289,4 +301,61 @@ function avatarStyle(m) {
     fontSize: 10, fontWeight: 700,
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   };
+}
+
+function MonthCalendarPicker({ selectedDays, onToggleDay }) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+
+  const days = [];
+  // Add empty cells for days before month starts
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(null);
+  }
+  // Add days of month
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(d);
+  }
+
+  const weekdayLabels = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+
+  return (
+    <div>
+      {/* Weekday header */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 6 }}>
+        {weekdayLabels.map((label) => (
+          <div key={label} style={{
+            textAlign: 'center', fontSize: 9, fontWeight: 700,
+            color: 'var(--km)', textTransform: 'uppercase',
+          }}>{label}</div>
+        ))}
+      </div>
+      {/* Calendar days */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+        {days.map((day, idx) => (
+          day ? (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onToggleDay(day + 6)} // +6 to avoid conflict with weekday indices 0-6
+              style={{
+                aspectRatio: '1', borderRadius: 4, border: '1.5px solid',
+                borderColor: selectedDays.includes(day + 6) ? 'var(--k)' : 'var(--sm)',
+                background: selectedDays.includes(day + 6) ? 'var(--k)' : 'white',
+                color: selectedDays.includes(day + 6) ? 'white' : 'var(--k)',
+                fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0,
+              }}
+            >{day}</button>
+          ) : (
+            <div key={idx} />
+          )
+        ))}
+      </div>
+    </div>
+  );
 }
