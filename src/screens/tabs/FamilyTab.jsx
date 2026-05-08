@@ -71,10 +71,11 @@ export default function FamilyTab({ family, members, session, families, activeFa
                   onClick={(e) => { e.stopPropagation(); setInviteMenuOpen(inviteOpen ? null : f.id); }}
                   style={{
                     padding: '10px 12px', background: 'white', border: '1px solid var(--sm)',
-                    borderRadius: 12, cursor: 'pointer', fontSize: 18, color: 'var(--ac)',
+                    borderRadius: 12, cursor: 'pointer', fontSize: 14, color: 'var(--ac)', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 6,
                   }}
                   title="Invita">
-                  💌
+                  💌 Invia
                 </button>
               </div>
 
