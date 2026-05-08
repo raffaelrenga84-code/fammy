@@ -14,6 +14,11 @@ export default function FamilyTab({ family, members, session, families, activeFa
   const [invitingMember, setInvitingMember] = useState(null);
   const [showInviteGeneric, setShowInviteGeneric] = useState(false);
   const [openOtherFamilies, setOpenOtherFamilies] = useState(false);
+  const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
+
+  const toggleFamilyExpanded = (familyId) => {
+    setExpandedFamilies((prev) => ({ ...prev, [familyId]: !prev[familyId] }));
+  };
 
   const isOwner = family?.created_by === session.user.id;
 
@@ -39,32 +44,41 @@ export default function FamilyTab({ family, members, session, families, activeFa
 
         {families.map((f) => {
           const familyMembers = members.filter((m) => m.family_id === f.id);
+          const isExpanded = expandedFamilies[f.id] || false;
           return (
-            <div key={f.id} style={{ marginBottom: 24 }}>
-              <div style={{ padding: '16px 16px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div key={f.id} style={{ marginBottom: 12 }}>
+              <button
+                onClick={() => toggleFamilyExpanded(f.id)}
+                style={{
+                  width: '100%', padding: '16px', display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'white', border: '1px solid var(--sm)', borderRadius: 12, cursor: 'pointer',
+                  textAlign: 'left', transition: 'all 0.2s ease'
+                }}>
                 <span style={{ fontSize: 24 }}>{f.emoji}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{f.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--km)' }}>{familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}</div>
                 </div>
-                <button onClick={() => onSwitchFamily(f.id)}
-                  style={{ background: 'none', border: 'none', color: 'var(--ac)', fontSize: 18, cursor: 'pointer' }}
-                  title="Gestisci famiglia">
-                  ›
-                </button>
-              </div>
-              <div className="list" style={{ marginTop: 0 }}>
-                {familyMembers.map((m) => (
-                  <MemberCard
-                    key={m.id}
-                    member={m}
-                    isMe={m.user_id === session.user.id}
-                    onEdit={() => setEditingMember(m)}
-                    onRemove={() => removeMember(m)}
-                    onInvite={() => setInvitingMember(m)}
-                  />
-                ))}
-              </div>
+                <span style={{
+                  fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s ease',
+                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)'
+                }}>›</span>
+              </button>
+
+              {isExpanded && (
+                <div className="list" style={{ marginTop: 8 }}>
+                  {familyMembers.map((m) => (
+                    <MemberCard
+                      key={m.id}
+                      member={m}
+                      isMe={m.user_id === session.user.id}
+                      onEdit={() => setEditingMember(m)}
+                      onRemove={() => removeMember(m)}
+                      onInvite={() => setInvitingMember(m)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
