@@ -11,7 +11,7 @@ import NewFamilyModal from '../components/NewFamilyModal.jsx';
 export default function HomeScreen({ session, profile, families, onRefresh }) {
   const { t } = useT();
   // activeFamily può essere un UUID specifico o 'all'
-  const [activeFamily, setActiveFamily] = useState(families[0]?.id);
+  const [activeFamily, setActiveFamily] = useState('all');
   const [activeTab, setActiveTab] = useState('bacheca');
   const [tasks, setTasks] = useState([]);
   const [members, setMembers] = useState([]);
