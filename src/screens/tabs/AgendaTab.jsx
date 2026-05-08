@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
 import AddEventModal from '../../components/AddEventModal.jsx';
 import CalendarShareModal from '../../components/CalendarShareModal.jsx';
+import ExportAllCalendarsModal from '../../components/ExportAllCalendarsModal.jsx';
 
 // Espande gli eventi: per quelli ricorrenti, genera istanze nei giorni
 // pertinenti tra (start originale) e (recurring_until o +12 mesi).
@@ -48,6 +49,7 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showExportAll, setShowExportAll] = useState(false);
   const [viewMonth, setViewMonth] = useState(() => {
     const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1);
   });
@@ -97,11 +99,18 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
         onNext={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
       />
 
-      {!isAll && targetFamily && (
-        <div style={{ padding: '4px 16px 12px' }}>
-          <button className="btn full secondary" onClick={() => setShowCalendar(true)}>
-            {t('family_export_calendar')}
-          </button>
+      {targetFamily && (
+        <div style={{ padding: '4px 16px 12px', display: 'flex', gap: 8, flexDirection: isAll ? 'column' : 'row' }}>
+          {!isAll && (
+            <button className="btn full secondary" onClick={() => setShowCalendar(true)}>
+              📅 {t('family_export_calendar')}
+            </button>
+          )}
+          {families.length > 1 && (
+            <button className="btn full secondary" onClick={() => setShowExportAll(true)}>
+              🎨 Esporta tutti i calendari
+            </button>
+          )}
         </div>
       )}
 
@@ -164,6 +173,14 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
         <CalendarShareModal
           family={targetFamily}
           onClose={() => setShowCalendar(false)}
+          onChanged={onChanged}
+        />
+      )}
+
+      {showExportAll && families.length > 1 && (
+        <ExportAllCalendarsModal
+          families={families}
+          onClose={() => setShowExportAll(false)}
           onChanged={onChanged}
         />
       )}
