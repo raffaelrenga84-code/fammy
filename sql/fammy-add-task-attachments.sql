@@ -70,8 +70,9 @@ CREATE POLICY "Users can view task attachments in their families"
     EXISTS (
       SELECT 1 FROM task_attachments ta
       JOIN tasks t ON ta.task_id = t.id
-      JOIN family_members fm ON t.family_id = fm.family_id
-      WHERE fm.user_id = auth.uid()
+      WHERE t.family_id IN (
+        SELECT family_id FROM members WHERE user_id = auth.uid()
+      )
       AND ta.file_path = storage.objects.name
     )
   );
@@ -83,8 +84,9 @@ CREATE POLICY "Users can delete task attachments they have access to"
     EXISTS (
       SELECT 1 FROM task_attachments ta
       JOIN tasks t ON ta.task_id = t.id
-      JOIN family_members fm ON t.family_id = fm.family_id
-      WHERE fm.user_id = auth.uid()
+      WHERE t.family_id IN (
+        SELECT family_id FROM members WHERE user_id = auth.uid()
+      )
       AND ta.file_path = storage.objects.name
     )
   );
