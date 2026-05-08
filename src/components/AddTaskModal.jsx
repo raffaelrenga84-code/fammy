@@ -237,12 +237,15 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                           </div>
                           <span style={{ fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
                         </button>
+
+                        {/* Pulsante "Seleziona tutti" SEMPRE VISIBILE */}
+                        <button type="button" onClick={() => toggleAllOfFamily(g.members)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 0, border: 'none', borderTop: isExpanded ? '1px solid var(--sm)' : 'none', background: 'var(--ab)', color: 'var(--ac)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
+                        </button>
+
                         {isExpanded && (
                           <div style={{ padding: 12, background: 'var(--ab)', borderTop: '1px solid var(--sm)' }}>
-                            <button type="button" onClick={() => toggleAllOfFamily(g.members)}
-                              style={{ width: '100%', marginBottom: 10, padding: '8px 10px', borderRadius: 8, border: '1.5px solid var(--sm)', background: allSelected ? 'var(--k)' : 'white', color: allSelected ? 'white' : 'var(--k)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                              {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
-                            </button>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                               {g.members.map((m) => {
                                 const selected = assignees.includes(m.id);
