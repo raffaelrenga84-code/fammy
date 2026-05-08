@@ -174,7 +174,7 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
           />
         )}
         {activeTab === 'spese' && !isAll && (
-          <SpeseTab familyId={activeFamily} expenses={expenses} tasks={tasks} members={members} me={me} onChanged={refresh} />
+          <SpeseTab familyId={activeFamily} families={families} expenses={expenses} tasks={tasks} members={members} me={me} onChanged={refresh} />
         )}
         {activeTab === 'spese' && isAll && (
           <div className="empty">

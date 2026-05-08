@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
 import AddExpenseModal from '../../components/AddExpenseModal.jsx';
 
-export default function SpeseTab({ familyId, expenses, tasks, members, me, onChanged }) {
+export default function SpeseTab({ familyId, families = [], expenses, tasks, members, me, onChanged }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [shares, setShares] = useState([]); // tutte le quote per le expenses caricate
@@ -165,6 +165,7 @@ export default function SpeseTab({ familyId, expenses, tasks, members, me, onCha
       {showAdd && (
         <AddExpenseModal
           familyId={familyId}
+          families={families}
           members={members}
           defaultPaidBy={me?.id}
           onClose={() => setShowAdd(false)}
