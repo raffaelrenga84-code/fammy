@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useT } from '../lib/i18n.jsx';
 
-export default function AddExpenseModal({ familyId, members, defaultPaidBy, onClose, onCreated }) {
+export default function AddExpenseModal({ familyId, families = [], members, defaultPaidBy, onClose, onCreated }) {
   const { t } = useT();
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -13,6 +13,12 @@ export default function AddExpenseModal({ familyId, members, defaultPaidBy, onCl
   const [customAmounts, setCustomAmounts] = useState({}); // {member_id: number}
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+
+  // Membri raggruppati per famiglia
+  const byFamily = families.map((f) => ({
+    family: f,
+    members: members.filter((m) => m.family_id === f.id),
+  })).filter((g) => g.members.length > 0);
 
   const totalAmount = parseFloat((amount || '0').replace(',', '.')) || 0;
 
@@ -114,19 +120,28 @@ export default function AddExpenseModal({ familyId, members, defaultPaidBy, onCl
               </div>
             )}
 
-            {/* Selezione membri */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {members.map((m) => {
-                const selected = splitMembers.includes(m.id);
-                return (
-                  <button key={m.id} type="button" onClick={() => toggleSplitMember(m.id)}
-                    style={chipMember(selected, m)}>
-                    {selected && <span>✓ </span>}
-                    <Avatar m={m} small />
-                    {m.name}
-                  </button>
-                );
-              })}
+            {/* Selezione membri raggruppati per famiglia */}
+            <div style={{ maxHeight: 280, overflowY: 'auto', marginBottom: 8 }}>
+              {byFamily.map((g) => (
+                <div key={g.family.id} style={{ marginBottom: 12, padding: 10, background: 'white', border: '1px solid var(--sm)', borderRadius: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--km)', marginBottom: 8 }}>
+                    {g.family.emoji} {g.family.name}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {g.members.map((m) => {
+                      const selected = splitMembers.includes(m.id);
+                      return (
+                        <button key={m.id} type="button" onClick={() => toggleSplitMember(m.id)}
+                          style={chipMember(selected, m)}>
+                          {selected && <span>✓ </span>}
+                          <Avatar m={m} small />
+                          {m.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Riepilogo split */}
