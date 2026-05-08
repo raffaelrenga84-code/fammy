@@ -6,7 +6,7 @@ import EditMemberModal from '../../components/EditMemberModal.jsx';
 import EditFamilyModal from '../../components/EditFamilyModal.jsx';
 import InviteShareModal from '../../components/InviteShareModal.jsx';
 
-export default function FamilyTab({ family, members, session, families, activeFamily, onSwitchFamily, onNewFamily, onChanged }) {
+export default function FamilyTab({ family, members, session, families, activeFamily, isAll, onSwitchFamily, onNewFamily, onChanged }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
@@ -28,6 +28,55 @@ export default function FamilyTab({ family, members, session, families, activeFa
   };
 
   const otherFamilies = (families || []).filter((f) => f.id !== activeFamily);
+
+  // Se isAll è true, mostra tutte le famiglie inline
+  if (isAll) {
+    return (
+      <>
+        <div style={{ padding: '0 22px 8px' }}>
+          <div className="sh-l" style={{ padding: 0 }}>{t('nav_family')}</div>
+        </div>
+
+        {families.map((f) => {
+          const familyMembers = members.filter((m) => m.family_id === f.id);
+          return (
+            <div key={f.id} style={{ marginBottom: 24 }}>
+              <div style={{ padding: '16px 16px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 24 }}>{f.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{f.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--km)' }}>{familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}</div>
+                </div>
+                <button onClick={() => onSwitchFamily(f.id)}
+                  style={{ background: 'none', border: 'none', color: 'var(--ac)', fontSize: 18, cursor: 'pointer' }}
+                  title="Gestisci famiglia">
+                  ›
+                </button>
+              </div>
+              <div className="list" style={{ marginTop: 0 }}>
+                {familyMembers.map((m) => (
+                  <MemberCard
+                    key={m.id}
+                    member={m}
+                    isMe={m.user_id === session.user.id}
+                    onEdit={() => setEditingMember(m)}
+                    onRemove={() => removeMember(m)}
+                    onInvite={() => setInvitingMember(m)}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{ padding: '8px 16px 16px' }}>
+          <button className="btn full secondary" onClick={onNewFamily} style={{ borderStyle: 'dashed' }}>
+            {t('new_family_btn')}
+          </button>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
