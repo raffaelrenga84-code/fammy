@@ -72,6 +72,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
                       key={m.id}
                       member={m}
                       isMe={m.user_id === session.user.id}
+                      isOwner={m.user_id === f.created_by}
                       onEdit={() => setEditingMember(m)}
                       onRemove={() => removeMember(m)}
                       onInvite={() => setShowFamilyInvite(true)}
@@ -109,9 +110,10 @@ export default function FamilyTab({ family, members, session, families, activeFa
             key={m.id}
             member={m}
             isMe={m.user_id === session.user.id}
+            isOwner={m.user_id === family.created_by}
             onEdit={() => setEditingMember(m)}
             onRemove={() => removeMember(m)}
-            onInvite={() => setInvitingMember(m)}
+            onInvite={() => setShowFamilyInvite(true)}
           />
         ))}
       </div>
@@ -191,7 +193,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
   );
 }
 
-function MemberCard({ member, isMe, onEdit, onRemove, onInvite }) {
+function MemberCard({ member, isMe, isOwner, onEdit, onRemove, onInvite }) {
   const canInvite = !isMe && !member.user_id;
 
   return (
@@ -204,7 +206,7 @@ function MemberCard({ member, isMe, onEdit, onRemove, onInvite }) {
         size={40}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
           {member.name}
           {isMe && <span style={{ fontSize: 11, color: 'var(--km)', fontWeight: 500 }}>(tu)</span>}
         </div>
@@ -213,6 +215,23 @@ function MemberCard({ member, isMe, onEdit, onRemove, onInvite }) {
           {member.user_id ? ' · ✓ ha account' : ' · senza account'}
         </div>
       </div>
+
+      {/* Badge OWNER/MEMBER */}
+      {isOwner && (
+        <span style={{
+          fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 4,
+          background: '#FF6B6B', color: 'white', textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}>OWNER</span>
+      )}
+      {!isOwner && member.user_id && (
+        <span style={{
+          fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 4,
+          background: 'var(--km)', color: 'white', textTransform: 'uppercase',
+          letterSpacing: 0.5, opacity: 0.6,
+        }}>MEMBER</span>
+      )}
+
       {canInvite && (
         <button
           onClick={(e) => { e.stopPropagation(); onInvite(); }}
