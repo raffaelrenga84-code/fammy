@@ -398,4 +398,11 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
 
             <div className="row" style={{ marginTop: 20 }}>
               <button className="btn secondary" onClick={() => setEditing(false)}>Annulla</button>
-             
+              <button className="btn" onClick={save} disabled={busy}>{busy ? <span className="spin" /> : 'Salva'}</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
