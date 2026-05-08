@@ -4,6 +4,7 @@ import { useT } from '../lib/i18n.jsx';
 
 export default function AddExpenseModal({ familyId, families = [], members, defaultPaidBy, onClose, onCreated }) {
   const { t } = useT();
+  const [selectedFamily, setSelectedFamily] = useState(familyId || (families.length > 0 ? families[0].id : ''));
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [paidBy, setPaidBy] = useState(defaultPaidBy || members[0]?.id || '');
@@ -14,11 +15,14 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  // Membri raggruppati per famiglia
-  const byFamily = families.map((f) => ({
-    family: f,
-    members: members.filter((m) => m.family_id === f.id),
-  })).filter((g) => g.members.length > 0);
+  // Filtra members della famiglia selezionata
+  const familyMembers = members.filter((m) => m.family_id === selectedFamily);
+
+  // Membri raggruppati per famiglia (solo per lo split, mostra solo la famiglia selezionata)
+  const byFamily = selectedFamily ? [{
+    family: families.find((f) => f.id === selectedFamily),
+    members: familyMembers,
+  }] : [];
 
   const totalAmount = parseFloat((amount || '0').replace(',', '.')) || 0;
 
@@ -38,10 +42,11 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
   const submit = async (e) => {
     e.preventDefault();
     if (!totalAmount || totalAmount <= 0) return;
+    if (!selectedFamily) return;
     setBusy(true); setErr('');
 
     const { data: expense, error: e1 } = await supabase.from('expenses').insert({
-      family_id: familyId,
+      family_id: selectedFamily,
       amount: totalAmount,
       currency: 'EUR',
       description: description.trim() || null,
@@ -77,6 +82,15 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
         <p className="modal-sub">{t('addexpense_sub')}</p>
 
         <form onSubmit={submit}>
+          {!familyId && families.length > 1 && (
+            <div style={{ marginBottom: 16 }}>
+              <label htmlFor="family">{t('addexpense_family') || 'Famiglia'}</label>
+              <select id="family" className="input"
+                value={selectedFamily} onChange={(e) => setSelectedFamily(e.target.value)}>
+                {families.map((f) => <option key={f.id} value={f.id}>{f.emoji} {f.name}</option>)}
+              </select>
+            </div>
+          )}
           <label htmlFor="amount">{t('addexpense_amount')}</label>
           <input id="amount" className="input" autoFocus inputMode="decimal"
             placeholder="0,00"
@@ -93,7 +107,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
             <label htmlFor="who">{t('addexpense_paid_by')}</label>
             <select id="who" className="input"
               value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
-              {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              {familyMembers.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
 

@@ -182,15 +182,8 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
             onChanged={refresh}
           />
         )}
-        {activeTab === 'spese' && !isAll && (
-          <SpeseTab familyId={activeFamily} families={families} expenses={expenses} tasks={tasks} members={members} me={me} onChanged={refresh} />
-        )}
-        {activeTab === 'spese' && isAll && (
-          <div className="empty">
-            <div className="empty-emoji">💶</div>
-            <h3>{t('filter_mine')}</h3>
-            <p>Le spese si vedono per famiglia. Seleziona una famiglia specifica nello switcher in alto.</p>
-          </div>
+        {activeTab === 'spese' && (
+          <SpeseTab familyId={isAll ? null : activeFamily} families={families} expenses={expenses} tasks={tasks} members={members} me={me} onChanged={refresh} />
         )}
         {activeTab === 'famiglia' && (
           <FamilyTab
