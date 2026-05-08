@@ -209,7 +209,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                 {/* Toggle "Solo per me" */}
                 <button type="button" onClick={() => {
                   setOnlyForMe(!onlyForMe);
-                  if (!onlyForMe) setAssignees([]); // Pulisci assegnazioni
+                  if (!onlyForMe) setAssignees([]);
                 }}
                   style={{
                     width: '100%', marginBottom: 16, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--sm)',
@@ -224,55 +224,32 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                   {byFamily.map((g) => {
                     const ids = g.members.map((m) => m.id);
                     const allSelected = ids.every((id) => assignees.includes(id));
-                    const someSelected = assignees.some((id) => ids.includes(id));
                     const isExpanded = expandedFamilies[g.family.id] || false;
                     const selectedCount = ids.filter((id) => assignees.includes(id)).length;
-
                     return (
                       <div key={g.family.id} style={{ marginBottom: 12, border: '1px solid var(--sm)', borderRadius: 12, overflow: 'hidden', background: 'white' }}>
-                        {/* Header tendina */}
-                        <button type="button"
-                          onClick={() => setExpandedFamilies((prev) => ({ ...prev, [g.family.id]: !isExpanded }))}
-                          style={{
-                            width: '100%', padding: '12px 12px', display: 'flex', alignItems: 'center', gap: 10,
-                            border: 'none', background: 'white', cursor: 'pointer', textAlign: 'left',
-                            borderBottom: isExpanded ? '1px solid var(--sm)' : 'none',
-                          }}>
+                        <button type="button" onClick={() => setExpandedFamilies((prev) => ({ ...prev, [g.family.id]: !isExpanded }))}
+                          style={{ width: '100%', padding: '12px 12px', display: 'flex', alignItems: 'center', gap: 10, border: 'none', background: 'white', cursor: 'pointer', textAlign: 'left', borderBottom: isExpanded ? '1px solid var(--sm)' : 'none' }}>
                           <span style={{ fontSize: 24 }}>{g.family.emoji}</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, fontSize: 14 }}>{g.family.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--km)' }}>
-                              {selectedCount > 0 ? `${selectedCount}/${ids.length} selezionati` : 'Nessuno selezionato'}
-                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--km)' }}>{selectedCount > 0 ? `${selectedCount}/${ids.length} selezionati` : 'Nessuno selezionato'}</div>
                           </div>
                           <span style={{ fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
                         </button>
-
-                        {/* Contenuto tendina */}
                         {isExpanded && (
                           <div style={{ padding: 12, background: 'var(--ab)', borderTop: '1px solid var(--sm)' }}>
-                            {/* Seleziona tutti */}
                             <button type="button" onClick={() => toggleAllOfFamily(g.members)}
-                              style={{
-                                width: '100%', marginBottom: 10, padding: '8px 10px', borderRadius: 8, border: '1.5px solid var(--sm)',
-                                background: allSelected ? 'var(--k)' : 'white',
-                                color: allSelected ? 'white' : 'var(--k)',
-                                fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                              }}>
+                              style={{ width: '100%', marginBottom: 10, padding: '8px 10px', borderRadius: 8, border: '1.5px solid var(--sm)', background: allSelected ? 'var(--k)' : 'white', color: allSelected ? 'white' : 'var(--k)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                               {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
                             </button>
-
-                            {/* Membri singoli */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                               {g.members.map((m) => {
                                 const selected = assignees.includes(m.id);
                                 return (
-                                  <button key={m.id} type="button" onClick={() => toggleAssignee(m.id)}
-                                    style={chipMember(selected)}>
+                                  <button key={m.id} type="button" onClick={() => toggleAssignee(m.id)} style={chipMember(selected)}>
                                     {selected && <span>✓</span>}
-                                    <span style={avatarStyle(m)}>
-                                      {m.avatar_letter || m.name.charAt(0).toUpperCase()}
-                                    </span>
+                                    <span style={avatarStyle(m)}>{m.avatar_letter || m.name.charAt(0).toUpperCase()}</span>
                                     {m.name}
                                   </button>
                                 );
