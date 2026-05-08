@@ -204,23 +204,50 @@ function MonthGrid({ month, events, selectedDay, onSelectDay, onPrev, onNext }) 
   return (
     <div className="month-grid-wrap">
       <div className="month-header">
-        <button className="month-nav" onClick={onPrev}>‹</button>
-        <span className="month-title">{Array.isArray(months) ? months[m] : ''} {year}</span>
-        <button className="month-nav" onClick={onNext}>›</button>
+        <button className="month-nav" onClick={onPrev} style={{ fontSize: 20 }}>‹</button>
+        <span className="month-title" style={{ fontSize: 20, fontWeight: 700 }}>{Array.isArray(months) ? months[m] : ''} {year}</span>
+        <button className="month-nav" onClick={onNext} style={{ fontSize: 20 }}>›</button>
       </div>
       <div className="month-weekdays">
-        {Array.isArray(weekdays) && weekdays.map((w, i) => <div key={i} className="month-weekday">{w}</div>)}
+        {Array.isArray(weekdays) && weekdays.map((w, i) => <div key={i} className="month-weekday" style={{ fontSize: 14, fontWeight: 700, padding: '12px 8px' }}>{w}</div>)}
       </div>
-      <div className="month-cells">
+      <div className="month-cells" style={{ gap: 8 }}>
         {cells.map((d, i) => {
-          const hasEvents = d && eventsByDay[d];
+          const eventCount = d && eventsByDay[d] ? eventsByDay[d].length : 0;
+          const hasEvents = eventCount > 0;
           const isSelected = d && selectedDay && selectedDay.getFullYear() === year && selectedDay.getMonth() === m && selectedDay.getDate() === d;
+          const today_b = isToday(d);
           return (
-            <button key={i} className={`month-cell ${isToday(d) ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+            <button key={i} className={`month-cell ${today_b ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasEvents ? 'has-events' : ''}`}
               disabled={!d}
-              onClick={() => d && onSelectDay(new Date(year, m, d))}>
-              {d && <span className="month-day">{d}</span>}
-              {hasEvents && <span className="month-dot" />}
+              onClick={() => d && onSelectDay(new Date(year, m, d))}
+              style={{
+                padding: '12px 8px',
+                minHeight: 70,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: hasEvents ? 'var(--am)11' : 'white',
+                border: today_b ? '2px solid var(--am)' : isSelected ? '2px solid var(--ac)' : hasEvents ? '2px solid var(--am)33' : '1px solid var(--sm)',
+                borderRadius: 12,
+                cursor: d ? 'pointer' : 'default',
+                transition: 'all 0.2s ease',
+              }}>
+              {d && <span className="month-day" style={{ fontSize: 18, fontWeight: 700, color: 'var(--k)' }}>{d}</span>}
+              {hasEvents && (
+                <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
+                  {Array.from({ length: Math.min(eventCount, 3) }).map((_, idx) => (
+                    <span key={idx} style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: 'var(--ac)',
+                    }} />
+                  ))}
+                  {eventCount > 3 && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ac)' }}>+</span>}
+                </div>
+              )}
             </button>
           );
         })}

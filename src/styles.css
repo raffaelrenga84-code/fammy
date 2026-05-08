@@ -203,24 +203,26 @@ label { display: block; font-size: 13px; font-weight: 600; color: var(--km); mar
 
 /* Month grid (Agenda) */
 .month-grid-wrap { padding: 8px 16px 12px; }
-.month-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 12px; }
-.month-title { font-family: var(--fs); font-size: 17px; font-weight: 600; color: var(--k); text-transform: capitalize; }
-.month-nav { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--sm);
-  background: white; color: var(--k); font-size: 18px; cursor: pointer; }
-.month-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
-.month-weekday { text-align: center; font-size: 10px; font-weight: 700; color: var(--kl);
-  padding: 4px 0; text-transform: uppercase; }
-.month-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.month-cell { position: relative; aspect-ratio: 1; padding: 0; border-radius: 10px;
-  border: none; background: transparent; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 13px; color: var(--k); transition: background .12s; }
+.month-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 16px; }
+.month-title { font-family: var(--fs); font-size: 20px; font-weight: 700; color: var(--k); text-transform: capitalize; }
+.month-nav { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--sm);
+  background: white; color: var(--k); font-size: 20px; cursor: pointer; transition: all .12s; }
+.month-nav:hover { background: var(--sm); }
+.month-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 12px; }
+.month-weekday { text-align: center; font-size: 13px; font-weight: 700; color: var(--k);
+  padding: 8px 0; text-transform: uppercase; letter-spacing: 0.3px; }
+.month-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.month-cell { position: relative; padding: 0; border-radius: 12px;
+  border: 1px solid var(--sm); background: white; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  font-size: 13px; color: var(--k); transition: all .15s; min-height: 70px; }
 .month-cell:disabled { cursor: default; opacity: 0; }
-.month-cell:hover:not(:disabled) { background: var(--sm); }
-.month-cell.today { background: var(--ab); color: var(--ac); font-weight: 700; }
-.month-cell.selected { background: var(--k); color: white; font-weight: 700; }
-.month-day { line-height: 1; }
-.month-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--tc); margin-top: 3px; }
+.month-cell:hover:not(:disabled) { border-color: var(--am); background: var(--amB); }
+.month-cell.today { background: var(--am)11; border: 2px solid var(--am); font-weight: 700; }
+.month-cell.selected { background: var(--ac); color: white; border: 2px solid var(--ac); font-weight: 700; }
+.month-cell.has-events { background: var(--am)11; }
+.month-day { line-height: 1.1; font-size: 18px; font-weight: 700; }
+.month-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ac); margin-top: 3px; }
 .month-cell.selected .month-dot { background: white; }
 
 /* Setting rows in profile */

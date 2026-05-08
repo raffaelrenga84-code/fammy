@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useT } from '../lib/i18n.jsx';
+import { useEventNotifications } from '../lib/useEventNotifications.jsx';
 import BachecaTab from './tabs/BachecaTab.jsx';
 import AgendaTab from './tabs/AgendaTab.jsx';
 import SpeseTab from './tabs/SpeseTab.jsx';
@@ -25,6 +26,9 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
     const dismissed = localStorage.getItem('fammy_pwa_banner_dismissed');
     return !dismissed;
   });
+
+  // Attiva le notifiche push per gli eventi
+  useEventNotifications(session, profile, families, events, taskAssignees);
 
   useEffect(() => {
     if (activeFamily !== 'all' && !families.find((f) => f.id === activeFamily) && families.length > 0) {

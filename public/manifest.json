@@ -7,6 +7,11 @@
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "orientation": "portrait-primary",
+  "service_worker": {
+    "src": "/sw.js",
+    "scope": "/",
+    "update_via_cache": "none"
+  },
   "icons": [
     {
       "src": "/icon.png",
