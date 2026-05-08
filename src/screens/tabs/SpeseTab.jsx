@@ -160,10 +160,10 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
         </>
       )}
 
-      {/* FAB per aggiungere spesa - solo se in una famiglia specifica */}
-      {familyId && <button className="fab" onClick={() => setShowAdd(true)}>+</button>}
+      {/* FAB per aggiungere spesa */}
+      <button className="fab" onClick={() => setShowAdd(true)}>+</button>
 
-      {familyId && showAdd && (
+      {showAdd && (
         <AddExpenseModal
           familyId={familyId}
           families={families}
