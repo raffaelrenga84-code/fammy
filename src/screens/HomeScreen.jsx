@@ -8,6 +8,7 @@ import SpeseTab from './tabs/SpeseTab.jsx';
 import FamilyTab from './tabs/FamilyTab.jsx';
 import ProfileTab from './tabs/ProfileTab.jsx';
 import NewFamilyModal from '../components/NewFamilyModal.jsx';
+import UpdateBanner from '../components/UpdateBanner.jsx';
 
 export default function HomeScreen({ session, profile, families, onRefresh }) {
   const { t } = useT();
@@ -26,9 +27,10 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
     const dismissed = localStorage.getItem('fammy_pwa_banner_dismissed');
     return !dismissed;
   });
+  const [showUpdateBanner, setShowUpdateBanner] = useState(true); // Controllato da UpdateBanner
 
   // Attiva le notifiche push per gli eventi
-  useEventNotifications(session, profile, families, events, taskAssignees);
+  const notificationControl = useEventNotifications(session, profile, families, events, taskAssignees);
 
   useEffect(() => {
     if (activeFamily !== 'all' && !families.find((f) => f.id === activeFamily) && families.length > 0) {
@@ -94,6 +96,9 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
 
   return (
     <div className="scr">
+      {/* Banner: App Update Available */}
+      {showUpdateBanner && <UpdateBanner onDismiss={() => setShowUpdateBanner(false)} />}
+
       {/* Banner: Add to Home Screen (multilingua) */}
       {showInstallBanner && (
         <div style={{
@@ -201,7 +206,7 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
           />
         )}
         {activeTab === 'profile' && (
-          <ProfileTab session={session} profile={profile} onChanged={refreshAll} />
+          <ProfileTab session={session} profile={profile} onChanged={refreshAll} notificationControl={notificationControl} />
         )}
       </div>
 

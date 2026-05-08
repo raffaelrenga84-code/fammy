@@ -7,7 +7,7 @@ import AccessibilityScreen from '../sub/AccessibilityScreen.jsx';
 
 const COLORS = ['#1C1611', '#2A6FDB', '#C96A3A', '#2E7D52', '#9B59B6', '#E91E8C', '#E67E22', '#7C3AED', '#5A4A3A', '#8B6F5E'];
 
-export default function ProfileTab({ session, profile, onChanged }) {
+export default function ProfileTab({ session, profile, onChanged, notificationControl = {} }) {
   const { t, lang, setLang } = useT();
   const [view, setView] = useState('main'); // main | plans | theme | a11y
   const [editingName, setEditingName] = useState(false);
@@ -148,6 +148,58 @@ export default function ProfileTab({ session, profile, onChanged }) {
         </div>
       </div>
 
+      {/* Notifiche Push */}
+      <div className="profile-section">
+        <div className="profile-label" style={{ marginBottom: 12 }}>🔔 Notifiche Push</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Status attuale */}
+          <div style={{
+            padding: 12,
+            background: 'var(--s)',
+            borderRadius: 12,
+            border: '1px solid var(--sm)',
+            fontSize: 13,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontWeight: 600 }}>Stato permessi:</span>
+              <span style={{
+                padding: '2px 8px',
+                borderRadius: 100,
+                fontSize: 11,
+                fontWeight: 700,
+                background: notificationControl.notificationPermission === 'granted' ? 'var(--gnB)' : 'var(--rdB)',
+                color: notificationControl.notificationPermission === 'granted' ? 'var(--gn)' : 'var(--rd)',
+              }}>
+                {notificationControl.notificationPermission === 'granted' ? '✓ Abilitate' : '⚠ Non abilitate'}
+              </span>
+            </div>
+            {notificationControl.notificationPermission === 'default' && (
+              <button
+                className="btn full secondary"
+                style={{ fontSize: 13, padding: '10px 12px', marginTop: 8 }}
+                onClick={() => notificationControl.requestPermission?.()}
+              >
+                Abilita notifiche
+              </button>
+            )}
+          </div>
+
+          {/* Toggle notifiche */}
+          {notificationControl.notificationPermission === 'granted' && (
+            <NotificationToggle
+              enabled={notificationControl.notificationsEnabled ?? true}
+              onChange={(enabled) => notificationControl.setNotificationsEnabled?.(enabled)}
+            />
+          )}
+
+          {/* Info */}
+          <p style={{ fontSize: 12, color: 'var(--km)', lineHeight: 1.5 }}>
+            📌 <strong>30 minuti prima</strong> dei tuoi eventi<br/>
+            ✨ <strong>Subito</strong> quando altri creano eventi
+          </p>
+        </div>
+      </div>
+
       {/* Settings menu (Plans, Theme, A11y) */}
       <div className="profile-section">
         <div className="profile-label" style={{ marginBottom: 8 }}>{t('profile_settings_h')}</div>
@@ -183,5 +235,43 @@ function SettingRow({ label, onClick, accent }) {
       <span style={{ flex: 1, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>{label}</span>
       <span style={{ color: 'var(--kl)', fontSize: 18 }}>›</span>
     </button>
+  );
+}
+
+function NotificationToggle({ enabled, onChange }) {
+  return (
+    <div style={{
+      padding: 12,
+      background: enabled ? 'var(--gnB)' : 'var(--rdB)',
+      borderRadius: 12,
+      border: '1px solid ' + (enabled ? 'var(--gn)' : 'var(--rd)'),
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--k)', marginBottom: 2 }}>
+          {enabled ? '🔔 Notifiche attive' : '🔕 Notifiche disattivate'}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--km)' }}>
+          {enabled ? 'Riceverai avvisi per i tuoi eventi' : 'Non riceverai alcuna notifica'}
+        </div>
+      </div>
+      <button
+        onClick={() => onChange(!enabled)}
+        style={{
+          padding: '8px 16px',
+          borderRadius: 100,
+          border: 'none',
+          background: enabled ? 'var(--gn)' : 'var(--rd)',
+          color: 'white',
+          fontWeight: 700,
+          fontSize: 12,
+          cursor: 'pointer',
+        }}
+      >
+        {enabled ? 'Disattiva' : 'Attiva'}
+      </button>
+    </div>
   );
 }

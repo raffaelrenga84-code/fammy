@@ -3,6 +3,8 @@ import { supabase } from './supabase.js';
 
 const NOTIFICATION_CHECK_INTERVAL = 60000; // 1 minuto
 
+const NOTIFICATIONS_ENABLED_KEY = 'fammy_notifications_enabled';
+
 /**
  * Hook per gestire le notifiche push per gli eventi
  * - Notifiche 30 minuti prima dei tuoi eventi
@@ -10,6 +12,10 @@ const NOTIFICATION_CHECK_INTERVAL = 60000; // 1 minuto
  */
 export function useEventNotifications(session, profile, families, events, taskAssignees) {
   const [notificationPermission, setNotificationPermission] = useState(Notification?.permission || 'default');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    const saved = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
+    return saved === null ? true : saved === 'true'; // Default true
+  });
   const scheduledNotificationsRef = useRef(new Map()); // Traccia le notifiche già programmate
 
   // Inizializza il service worker
@@ -37,7 +43,7 @@ export function useEventNotifications(session, profile, families, events, taskAs
 
   // Monitora gli eventi e programma le notifiche
   useEffect(() => {
-    if (notificationPermission !== 'granted' || !session?.user?.id) {
+    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled) {
       return;
     }
 
@@ -77,11 +83,11 @@ export function useEventNotifications(session, profile, families, events, taskAs
       });
       scheduledNotificationsRef.current.clear();
     };
-  }, [events, notificationPermission, session?.user?.id]);
+  }, [events, notificationPermission, session?.user?.id, notificationsEnabled]);
 
   // Monitora gli eventi della famiglia per nuovi eventi
   useEffect(() => {
-    if (notificationPermission !== 'granted' || !session?.user?.id) {
+    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled) {
       return;
     }
 
@@ -120,16 +126,21 @@ export function useEventNotifications(session, profile, families, events, taskAs
         unsubscribe.unsubscribe();
       }
     };
-  }, [families, notificationPermission, session?.user?.id]);
+  }, [families, notificationPermission, session?.user?.id, notificationsEnabled]);
 
   return {
     notificationPermission,
+    notificationsEnabled,
     requestPermission: () => {
       if (Notification?.permission === 'default') {
         Notification.requestPermission().then((perm) => {
           setNotificationPermission(perm);
         });
       }
+    },
+    setNotificationsEnabled: (enabled) => {
+      setNotificationsEnabled(enabled);
+      localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, String(enabled));
     },
   };
 }
