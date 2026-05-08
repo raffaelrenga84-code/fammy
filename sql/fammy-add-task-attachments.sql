@@ -1,0 +1,87 @@
+-- Create task_attachments table for storing file references
+CREATE TABLE IF NOT EXISTS task_attachments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  file_path VARCHAR NOT NULL,
+  file_name VARCHAR NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE task_attachments ENABLE ROW LEVEL SECURITY;
+
+-- Create indexes for performance
+CREATE INDEX idx_task_attachments_task_id ON task_attachments(task_id);
+
+-- RLS Policies: Users can only see/modify attachments for tasks in their families
+CREATE POLICY "Users can view task attachments in their families"
+  ON task_attachments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM tasks t
+      JOIN family_members fm ON t.family_id = fm.family_id
+      WHERE fm.user_id = auth.uid()
+      AND t.id = task_attachments.task_id
+    )
+  );
+
+CREATE POLICY "Users can insert task attachments for tasks in their families"
+  ON task_attachments FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM tasks t
+      JOIN family_members fm ON t.family_id = fm.family_id
+      WHERE fm.user_id = auth.uid()
+      AND t.id = task_attachments.task_id
+    )
+  );
+
+CREATE POLICY "Users can delete task attachments they created"
+  ON task_attachments FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM tasks t
+      JOIN family_members fm ON t.family_id = fm.family_id
+      WHERE fm.user_id = auth.uid()
+      AND t.id = task_attachments.task_id
+    )
+  );
+
+-- Create task-attachments storage bucket (if doesn't exist)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('task-attachments', 'task-attachments', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- RLS for storage bucket
+CREATE POLICY "Users can upload task attachments in their families"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'task-attachments' AND
+    auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "Users can view task attachments in their families"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'task-attachments' AND
+    EXISTS (
+      SELECT 1 FROM task_attachments ta
+      JOIN tasks t ON ta.task_id = t.id
+      JOIN family_members fm ON t.family_id = fm.family_id
+      WHERE fm.user_id = auth.uid()
+      AND ta.file_path = storage.objects.name
+    )
+  );
+
+CREATE POLICY "Users can delete task attachments they have access to"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'task-attachments' AND
+    EXISTS (
+      SELECT 1 FROM task_attachments ta
+      JOIN tasks t ON ta.task_id = t.id
+      JOIN family_members fm ON t.family_id = fm.family_id
+      WHERE fm.user_id = auth.uid()
+      AND ta.file_path = storage.objects.name
+    )
+  );

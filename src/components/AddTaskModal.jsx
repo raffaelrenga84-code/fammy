@@ -19,7 +19,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
     { id: 'other',  emoji: '📌', label: t('cat_other') },
   ];
 
-  const [step, setStep] = useState(1); // 1: titolo+cat, 2: assegna+data, 3: note+ricorrenza
+  const [step, setStep] = useState(1); // 1: titolo+cat, 2: assegna+data, 3: note+ricorrenza+foto
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [category, setCategory] = useState('care');
@@ -30,6 +30,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
   const [taskFamily, setTaskFamily] = useState(familyId);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [attachments, setAttachments] = useState([]); // Array di {file, preview}
 
   // Membri raggruppati per famiglia
   const byFamily = families.map((f) => ({
@@ -53,6 +54,33 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
 
   const toggleDay = (idx) => {
     setRecurringDays((prev) => prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx].sort((a,b) => a-b));
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setAttachments((prev) => [...prev, {
+          file,
+          preview: evt.target.result,
+          name: file.name,
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset input
+    e.target.value = '';
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Non impostata';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const submit = async (e) => {
@@ -79,6 +107,32 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
     if (assignees.length > 0) {
       const rows = assignees.map((memberId) => ({ task_id: task.id, member_id: memberId }));
       await supabase.from('task_assignees').insert(rows);
+    }
+
+    // Upload allegati
+    if (attachments.length > 0) {
+      for (const att of attachments) {
+        const timestamp = Date.now();
+        const fileName = `${timestamp}-${att.file.name}`;
+        const filePath = `tasks/${task.id}/${fileName}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from('task-attachments')
+          .upload(filePath, att.file);
+
+        if (!uploadErr) {
+          // Salva riferimento nel DB (se tabella esiste)
+          try {
+            await supabase.from('task_attachments').insert({
+              task_id: task.id,
+              file_path: filePath,
+              file_name: att.file.name,
+            });
+          } catch (dbErr) {
+            console.warn('task_attachments table not yet created:', dbErr);
+          }
+        }
+      }
     }
 
     onCreated && onCreated();
@@ -197,15 +251,22 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
             </>
           )}
 
-          {/* STEP 3: Note + Ricorrenza (opzionale) */}
+          {/* STEP 3: Note + Ricorrenza + Foto (opzionale) */}
           {step === 3 && (
             <>
               <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4, minHeight: 0 }}>
+                {/* Preview data scelta */}
+                <div style={{ padding: 14, background: 'var(--ab)', borderRadius: 14, border: '1px solid var(--sm)', marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', marginBottom: 4 }}>📅 Data</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--k)' }}>{formatDate(dueDate)}</div>
+                </div>
+
                 <label htmlFor="note">{t('addtask_note_label')} <span style={{ color: 'var(--km)' }}>(opzionale)</span></label>
                 <textarea id="note" className="input" rows={3}
                   placeholder={t('addtask_note_ph')}
                   value={note} onChange={(e) => setNote(e.target.value)} />
 
+                {/* Ricorrenza */}
                 <div style={{ marginTop: 20, padding: 14, background: 'var(--ab)', borderRadius: 14, border: '1px solid var(--sm)' }}>
                   <label style={{ marginBottom: 4 }}>{t('repeat_label')} <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></label>
                   <div style={{ fontSize: 11, color: 'var(--km)', marginBottom: 12 }}>
@@ -255,6 +316,44 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                       <label htmlFor="until" style={{ fontSize: 11, color: 'var(--km)' }}>{t('repeat_until')}</label>
                       <input id="until" type="date" className="input" style={{ marginTop: 4 }}
                         value={recurringUntil} onChange={(e) => setRecurringUntil(e.target.value)} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Foto/Allegati */}
+                <div style={{ marginTop: 20 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                    <span>{t('addtask_attachments_label') || '📸 Allega foto'} <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
+                  </label>
+                  <input type="file" id="file-input" multiple accept="image/*" capture
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }} />
+                  <button type="button" onClick={() => document.getElementById('file-input').click()}
+                    style={{
+                      width: '100%', padding: 14, borderRadius: 12, border: '2px dashed var(--sm)',
+                      background: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                      color: 'var(--ac)', transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => e.target.style.borderColor = 'var(--ac)'}
+                    onMouseLeave={(e) => e.target.style.borderColor = 'var(--sm)'}>
+                    📷 Scatta o allegaFoto
+                  </button>
+
+                  {/* Preview foto */}
+                  {attachments.length > 0 && (
+                    <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 8 }}>
+                      {attachments.map((att, idx) => (
+                        <div key={idx} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--sm)' }}>
+                          <img src={att.preview} style={{ width: '100%', height: '100%', objectFit: 'cover', aspectRatio: '1' }} alt={`Attachment ${idx}`} />
+                          <button type="button" onClick={() => removeAttachment(idx)}
+                            style={{
+                              position: 'absolute', top: 2, right: 2, width: 20, height: 20,
+                              borderRadius: '50%', background: 'var(--rd)', color: 'white',
+                              border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>✕</button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
