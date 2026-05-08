@@ -1,0 +1,46 @@
+[33mcommit 2342c8e7ebce6859b9b7bf3cc64376909063ede1[m
+Author: Raffael Renga <raffael.renga84@gmail.com>
+Date:   Thu May 7 19:34:48 2026 +0000
+
+    Feature: close task modal after assignment actions
+
+[1mdiff --git a/src/components/TaskDetailModal.jsx b/src/components/TaskDetailModal.jsx[m
+[1mindex 270f90e..9db6865 100644[m
+[1m--- a/src/components/TaskDetailModal.jsx[m
+[1m+++ b/src/components/TaskDetailModal.jsx[m
+[36m@@ -107,6 +107,7 @@[m [mexport default function TaskDetailModal({ task, members, me, onClose, onChanged,[m
+     await supabase.from('tasks').update({ status: 'taken' }).eq('id', task.id);[m
+     setBusy(false);[m
+     onChanged();[m
+[32m+[m[32m    onClosed();[m
+   };[m
+ [m
+   // Assegna a un membro specifico[m
+[36m@@ -130,6 +131,7 @@[m [mexport default function TaskDetailModal({ task, members, me, onClose, onChanged,[m
+     setBusy(false);[m
+     setShowAssignMenu(false);[m
+     onChanged();[m
+[32m+[m[32m    onClosed();[m
+   };[m
+ [m
+   // Rimuovi me stesso (Ho un imprevisto)[m
+[36m@@ -156,6 +158,7 @@[m [mexport default function TaskDetailModal({ task, members, me, onClose, onChanged,[m
+     }[m
+     setBusy(false);[m
+     onChanged();[m
+[32m+[m[32m    onClosed();[m
+   };[m
+ [m
+   const addComment = async () => {[m
+[36m@@ -396,9 +399,4 @@[m [mexport default function TaskDetailModal({ task, members, me, onClose, onChanged,[m
+                 {busy ? <span className="spin" /> : 'Salva'}[m
+               </button>[m
+             </div>[m
+[31m-          </>[m
+[31m-        )}[m
+[31m-      </div>[m
+[31m-    </div>[m
+[31m-  );[m
+[31m-}[m
+[41m+        [m
+\ No newline at end of file[m
