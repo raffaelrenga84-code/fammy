@@ -323,7 +323,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                 {/* Foto/Allegati */}
                 <div style={{ marginTop: 20 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                    <span>{t('addtask_attachments_label') || '📸 Allega foto'} <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
+                    <span>📸 Allega foto <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
                   </label>
                   <input type="file" id="file-input" multiple accept="image/*" capture
                     onChange={handleFileSelect}
@@ -336,7 +336,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                     }}
                     onMouseEnter={(e) => e.target.style.borderColor = 'var(--ac)'}
                     onMouseLeave={(e) => e.target.style.borderColor = 'var(--sm)'}>
-                    📷 Scatta o allegaFoto
+                    📷 Scatta o allega Foto
                   </button>
 
                   {/* Preview foto */}
