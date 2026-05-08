@@ -191,7 +191,12 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
     <div
       className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`}
       onClick={onClick}
-      style={task.urgent ? { borderLeft: '4px solid var(--rd)', borderRadius: 0, background: 'var(--rd)11' } : { borderRadius: 8 }}
+      style={task.urgent ? {
+        borderLeft: '6px solid var(--rd)',
+        borderRadius: 0,
+        background: 'var(--rd)22',
+        boxShadow: '0 0 8px rgba(231, 76, 60, 0.3)'
+      } : { borderRadius: 8 }}
     >
       <div className="tc-row">
         <button className="tc-check" onClick={onCheck}>
@@ -199,7 +204,7 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
         </button>
         <span className="tc-emoji">{CAT[task.category] || '📌'}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="tc-title" style={task.urgent ? { color: 'var(--rd)', fontWeight: 600 } : {}}>{task.urgent ? '🚨 ' : ''}{task.title}</div>
+          <div className="tc-title" style={task.urgent ? { color: 'var(--rd)', fontWeight: 700, fontSize: 14 } : {}}>{task.urgent ? '🚨 ' : ''}{task.title}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
             {assignees.length > 0 && (
               <span style={{
