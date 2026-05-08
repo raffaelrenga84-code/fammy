@@ -44,7 +44,13 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
       return;
     }
     setBusy(true);
+
+    // Salva il compleanno nel profilo
     await supabase.from('profiles').update({ birthday: birthday || null }).eq('id', session.user.id);
+
+    // Salva il compleanno anche in tutti i members dell'utente (per le notifiche)
+    await supabase.from('members').update({ birth_date: birthday || null }).eq('user_id', session.user.id);
+
     onChanged && onChanged();
     setBusy(false);
     setEditingBirthday(false);

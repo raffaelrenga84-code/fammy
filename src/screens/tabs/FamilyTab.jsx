@@ -252,6 +252,11 @@ function MemberCard({ member, isMe, isOwner, onEdit, onRemove, onInvite }) {
           {member.role || 'membro'}
           {member.user_id ? ' · ✓ ha account' : ' · senza account'}
         </div>
+        {member.birthday && (
+          <div style={{ color: 'var(--km)', fontSize: 12, marginTop: 3 }}>
+            🎂 {new Date(member.birthday).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
+        )}
       </div>
 
       {/* Badge OWNER/MEMBER */}

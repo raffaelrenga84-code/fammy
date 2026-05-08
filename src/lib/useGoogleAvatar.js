@@ -22,14 +22,24 @@ export function useGoogleAvatar(session, profile) {
         const avatarUrl = user.user_metadata?.picture || user.user_metadata?.avatar_url;
         if (!avatarUrl) return; // Nessuna foto disponibile
 
-        // Salva l'URL nel database
-        const { error: updateError } = await supabase
+        // Salva l'URL in profiles
+        const { error: profileError } = await supabase
           .from('profiles')
           .update({ avatar_url: avatarUrl })
           .eq('id', session.user.id);
 
-        if (updateError) {
-          console.error('Errore nel salvataggio avatar:', updateError);
+        if (profileError) {
+          console.error('Errore nel salvataggio avatar in profiles:', profileError);
+        }
+
+        // Salva l'URL anche in tutti i members dell'utente
+        const { error: memberError } = await supabase
+          .from('members')
+          .update({ avatar_url: avatarUrl })
+          .eq('user_id', session.user.id);
+
+        if (memberError) {
+          console.error('Errore nel salvataggio avatar in members:', memberError);
         }
       } catch (err) {
         console.error('Errore nella funzione useGoogleAvatar:', err);
