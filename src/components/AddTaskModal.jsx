@@ -21,7 +21,6 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
     { id: 'home',   emoji: '🏠', label: t('cat_home') },
     { id: 'health', emoji: '💊', label: t('cat_health') },
     { id: 'admin',  emoji: '📋', label: t('cat_admin') },
-    { id: 'spese',  emoji: '💶', label: t('cat_spese') },
     { id: 'other',  emoji: '📌', label: t('cat_other') },
   ];
 
