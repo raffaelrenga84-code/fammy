@@ -11,9 +11,14 @@ CREATE TABLE IF NOT EXISTS expense_attachments (
 ALTER TABLE expense_attachments ENABLE ROW LEVEL SECURITY;
 
 -- Create indexes for performance
-CREATE INDEX idx_expense_attachments_expense_id ON expense_attachments(expense_id);
+CREATE INDEX IF NOT EXISTS idx_expense_attachments_expense_id ON expense_attachments(expense_id);
 
--- RLS Policies: Users can only see/modify attachments for expenses in their families
+-- RLS Policies: Drop existing policies first, then create them
+-- (Policies don't support IF NOT EXISTS in PostgreSQL)
+DROP POLICY IF EXISTS "Users can view expense attachments in their families" ON expense_attachments;
+DROP POLICY IF EXISTS "Users can insert expense attachments for expenses in their families" ON expense_attachments;
+DROP POLICY IF EXISTS "Users can delete expense attachments they have access to" ON expense_attachments;
+
 CREATE POLICY "Users can view expense attachments in their families"
   ON expense_attachments FOR SELECT
   USING (
@@ -55,7 +60,11 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('expense-attachments', 'expense-attachments', false)
 ON CONFLICT (id) DO NOTHING;
 
--- RLS for storage bucket
+-- RLS for storage bucket - Drop and recreate
+DROP POLICY IF EXISTS "Users can upload expense attachments in their families" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view expense attachments in their families" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete expense attachments they have access to" ON storage.objects;
+
 CREATE POLICY "Users can upload expense attachments in their families"
   ON storage.objects FOR INSERT
   WITH CHECK (
