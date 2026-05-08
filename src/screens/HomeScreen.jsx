@@ -214,7 +214,7 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
         <NavBtn icon="🏠" label={t('nav_bacheca')} active={activeTab === 'bacheca'} onClick={() => setActiveTab('bacheca')} />
         <NavBtn icon="📅" label={t('nav_agenda')} active={activeTab === 'agenda'} onClick={() => setActiveTab('agenda')} />
         <NavBtn icon="💶" label={t('nav_spese')} active={activeTab === 'spese'} onClick={() => setActiveTab('spese')} />
-        <NavBtn icon="👥" label={t('nav_family')} active={activeTab === 'famiglia'} onClick={() => setActiveTab('famiglia')} />
+        <NavBtn icon="👥" label={t('nav_family')} active={activeTab === 'famiglia'} onClick={() => { setActiveTab('famiglia'); setActiveFamily('all'); }} />
         <NavBtn icon="👤" label={t('nav_profile')} active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
       </nav>
     </div>
