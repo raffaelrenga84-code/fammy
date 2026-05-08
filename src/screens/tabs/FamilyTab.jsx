@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
+import Avatar from '../../components/Avatar.jsx';
 import AddMemberModal from '../../components/AddMemberModal.jsx';
 import EditMemberModal from '../../components/EditMemberModal.jsx';
 import EditFamilyModal from '../../components/EditFamilyModal.jsx';
@@ -208,9 +209,13 @@ function MemberCard({ member, isMe, onEdit, onRemove, onInvite }) {
 
   return (
     <div className="member-card" onClick={onEdit}>
-      <div className="av" style={{ background: member.avatar_color || '#1C1611' }}>
-        {member.avatar_letter || member.name.charAt(0).toUpperCase()}
-      </div>
+      <Avatar
+        name={member.name}
+        avatarUrl={member.avatar_url}
+        avatarLetter={member.avatar_letter}
+        avatarColor={member.avatar_color || '#1C1611'}
+        size={40}
+      />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
           {member.name}

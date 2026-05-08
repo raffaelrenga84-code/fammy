@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { useT, LANGS } from '../../lib/i18n.jsx';
+import Avatar from '../../components/Avatar.jsx';
 import PricingScreen from '../sub/PricingScreen.jsx';
 import ThemeScreen from '../sub/ThemeScreen.jsx';
 import AccessibilityScreen from '../sub/AccessibilityScreen.jsx';
@@ -73,9 +74,13 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
           <div>
             <div className="profile-label">{t('profile_avatar')}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
-              <div className="av" style={{ width: 64, height: 64, fontSize: 26, borderRadius: 20, background: color }}>
-                {initial}
-              </div>
+              <Avatar
+                name={profile?.display_name}
+                avatarUrl={profile?.avatar_url}
+                avatarLetter={initial}
+                avatarColor={color}
+                size={64}
+              />
             </div>
           </div>
           <button className="profile-btn" onClick={() => setEditingColor(!editingColor)}>

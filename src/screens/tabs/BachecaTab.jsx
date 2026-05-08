@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
+import Avatar from '../../components/Avatar.jsx';
 import AddTaskModal from '../../components/AddTaskModal.jsx';
 import TaskDetailModal from '../../components/TaskDetailModal.jsx';
 
@@ -214,12 +215,15 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
                 fontSize: 11, fontWeight: 600,
               }}>
                 {assignees.slice(0, 3).map((a) => (
-                  <span key={a.id} style={{
-                    width: 16, height: 16, borderRadius: 4,
-                    background: a.avatar_color || '#1C1611', color: 'white',
-                    fontSize: 9, fontWeight: 700,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  }}>{a.avatar_letter || a.name.charAt(0).toUpperCase()}</span>
+                  <Avatar
+                    key={a.id}
+                    name={a.name}
+                    avatarUrl={a.avatar_url}
+                    avatarLetter={a.avatar_letter}
+                    avatarColor={a.avatar_color || '#1C1611'}
+                    size={16}
+                    style={{ display: 'inline-flex' }}
+                  />
                 ))}
                 {assignees.length === 1 ? assignees[0].name : `${assignees.length}`}
               </span>

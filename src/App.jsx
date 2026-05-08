@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase.js';
 import { I18nProvider, detectBrowserLang } from './lib/i18n.jsx';
 import { applyTheme, getCurrentTheme } from './screens/sub/ThemeScreen.jsx';
 import { applyA11ySettings } from './screens/sub/AccessibilityScreen.jsx';
+import { useGoogleAvatar } from './lib/useGoogleAvatar.js';
 import LoginScreen from './screens/LoginScreen.jsx';
 import WelcomeScreen from './screens/WelcomeScreen.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
@@ -24,6 +25,9 @@ export default function App() {
   const [families, setFamilies] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [inviteToken, setInviteToken] = useState(getInviteToken());
+
+  // Salva automaticamente l'avatar da Google al primo login
+  useGoogleAvatar(session, profile);
 
   useEffect(() => {
     // Prova prima a ripristinare la sessione da localStorage (iOS PWA)
