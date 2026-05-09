@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useT } from '../lib/i18n.jsx';
 
@@ -183,8 +183,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                     <button type="button" onClick={() => setDueDate(dateOffset(7))}
                       style={chipStyle(isQuickActive(7))}>📅 {t('date_in_a_week')}</button>
                   </div>
-                  <input type="date" className="input"
-                    value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                  <DateField value={dueDate} onChange={setDueDate} />
                 </div>
               </div>
 
@@ -510,3 +509,68 @@ function MonthCalendarPicker({ selectedDays, onToggleDay }) {
     </div>
   );
 }
+
+
+function DateField({ value, onChange }) {
+  const ref = useRef(null);
+  const open = () => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      try { el.showPicker(); return; } catch (e) {}
+    }
+    el.focus();
+    el.click();
+  };
+  const display = value
+    ? new Date(value + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={open}
+        style={{
+          width: '100%', padding: '14px 16px',
+          border: value ? '1.5px solid var(--ac)' : '1.5px solid var(--sm)',
+          borderRadius: 12,
+          background: value ? 'var(--ab)' : 'white',
+          color: value ? 'var(--ac)' : 'var(--km)',
+          fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', textAlign: 'left',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}
+      >
+        <span style={{ fontSize: 18 }}>📅</span>
+        <span style={{ flex: 1, textTransform: value ? 'capitalize' : 'none' }}>
+          {display || 'Tocca per scegliere una data'}
+        </span>
+        {value && (
+          <span
+            role="button"
+            onClick={(e) => { e.stopPropagation(); onChange(''); }}
+            style={{
+              padding: '2px 8px', borderRadius: 100,
+              background: 'white', border: '1px solid var(--sm)',
+              color: 'var(--km)', fontSize: 12, fontWeight: 600,
+            }}
+            title="Rimuovi data"
+          >✕</span>
+        )}
+      </button>
+      <input
+        ref={ref}
+        type="date"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          position: 'absolute', left: 0, top: 0,
+          width: 1, height: 1, opacity: 0,
+          pointerEvents: 'none',
+        }}
+        tabIndex={-1}
+      />
+    </div>
+  );
+}
+

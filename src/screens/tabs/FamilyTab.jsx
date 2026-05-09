@@ -13,10 +13,9 @@ export default function FamilyTab({ family, members, session, families, activeFa
   const [editingMember, setEditingMember] = useState(null);
   const [editingFamily, setEditingFamily] = useState(false);
   const [showFamilyInvite, setShowFamilyInvite] = useState(false);
-  const [openOtherFamilies, setOpenOtherFamilies] = useState(false);
-  const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
-  const [inviteMenuOpen, setInviteMenuOpen] = useState(null); // familyId che ha il menu aperto
-  const [editingFamilyAll, setEditingFamilyAll] = useState(null); // family object in vista "Tutte"
+  const [expandedFamilies, setExpandedFamilies] = useState({});
+  const [inviteMenuOpen, setInviteMenuOpen] = useState(null);
+  const [editingFamilyAll, setEditingFamilyAll] = useState(null);
 
   const toggleFamilyExpanded = (familyId) => {
     setExpandedFamilies((prev) => ({ ...prev, [familyId]: !prev[familyId] }));
@@ -34,9 +33,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
     onChanged();
   };
 
-  const otherFamilies = (families || []).filter((f) => f.id !== activeFamily);
-
-  // Se isAll è true, mostra tutte le famiglie inline
   if (isAll) {
     return (
       <>
@@ -50,31 +46,45 @@ export default function FamilyTab({ family, members, session, families, activeFa
           const inviteOpen = inviteMenuOpen === f.id;
           const isFamilyOwner = f.created_by === session.user.id;
           return (
-            <div key={f.id} style={{ marginBottom: 12, position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: inviteOpen ? 8 : 0 }}>
-                <button
-                  onClick={() => toggleFamilyExpanded(f.id)}
-                  style={{
-                    flex: 1, padding: '16px', display: 'flex', alignItems: 'center', gap: 12,
-                    background: 'white', border: '1px solid var(--sm)', borderRadius: 12, cursor: 'pointer',
-                    textAlign: 'left', transition: 'all 0.2s ease'
-                  }}>
-                  <span style={{ fontSize: 24 }}>{f.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{f.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--km)' }}>{familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}</div>
+            <div key={f.id} style={{
+              marginBottom: 12, position: 'relative',
+              background: 'white', border: '1px solid var(--sm)',
+              borderRadius: 12, overflow: 'hidden',
+            }}>
+              {/* Riga principale: nome famiglia */}
+              <button
+                onClick={() => toggleFamilyExpanded(f.id)}
+                style={{
+                  width: '100%', padding: '16px', display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  textAlign: 'left',
+                }}>
+                <span style={{ fontSize: 28 }}>{f.emoji}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{f.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--km)', marginTop: 2 }}>
+                    {familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}
                   </div>
-                  <span style={{
-                    fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s ease',
-                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)'
-                  }}>›</span>
-                </button>
+                </div>
+                <span style={{
+                  fontSize: 20, color: 'var(--km)', transition: 'transform 0.2s ease',
+                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)'
+                }}>›</span>
+              </button>
+
+              {/* Toolbar azioni allineate */}
+              <div style={{
+                display: 'flex', alignItems: 'stretch',
+                borderTop: '1px solid var(--sm)',
+                background: '#F7F4ED',
+              }}>
                 <button
                   onClick={(e) => { e.stopPropagation(); setInviteMenuOpen(inviteOpen ? null : f.id); }}
                   style={{
-                    padding: '10px 12px', background: 'white', border: '1px solid var(--sm)',
-                    borderRadius: 12, cursor: 'pointer', fontSize: 14, color: 'var(--ac)', fontWeight: 600,
-                    display: 'flex', alignItems: 'center', gap: 6,
+                    flex: 1, padding: '10px 12px', background: 'transparent',
+                    border: 'none', borderRight: isFamilyOwner ? '1px solid var(--sm)' : 'none',
+                    cursor: 'pointer', fontSize: 13, color: 'var(--ac)', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                   title="Invita">
                   💌 Invita
@@ -83,8 +93,9 @@ export default function FamilyTab({ family, members, session, families, activeFa
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingFamilyAll(f); }}
                     style={{
-                      padding: '10px 12px', background: 'white', border: '1px solid var(--sm)',
-                      borderRadius: 12, cursor: 'pointer', fontSize: 16,
+                      width: 56, padding: '10px 12px', background: 'transparent',
+                      border: 'none', cursor: 'pointer', fontSize: 16,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                     title="Modifica famiglia (solo creatore)">
                     ⚙️
@@ -95,9 +106,8 @@ export default function FamilyTab({ family, members, session, families, activeFa
               {/* Menu invito dropdown */}
               {inviteOpen && (
                 <div style={{
-                  background: 'white', border: '1px solid var(--sm)', borderRadius: 12, padding: 12,
-                  marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 8,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  background: 'white', borderTop: '1px solid var(--sm)', padding: 12,
+                  display: 'flex', flexDirection: 'column', gap: 8,
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase' }}>
                     Condividi invito
@@ -146,7 +156,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
               )}
 
               {isExpanded && (
-                <div className="list" style={{ marginTop: 8 }}>
+                <div className="list" style={{ borderTop: '1px solid var(--sm)' }}>
                   {familyMembers.map((m) => (
                     <MemberCard
                       key={m.id}
@@ -176,6 +186,14 @@ export default function FamilyTab({ family, members, session, families, activeFa
             onClose={() => setEditingFamilyAll(null)}
             onSaved={() => { setEditingFamilyAll(null); onChanged(); }}
             onDeleted={() => { setEditingFamilyAll(null); onChanged(); }}
+          />
+        )}
+
+        {editingMember && (
+          <EditMemberModal
+            member={editingMember}
+            onClose={() => setEditingMember(null)}
+            onSaved={() => { setEditingMember(null); onChanged(); }}
           />
         )}
       </>
@@ -215,7 +233,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
           {t('family_invite_link')}
         </button>
       </div>
-
 
       {showAdd && (
         <AddMemberModal
@@ -281,7 +298,6 @@ function MemberCard({ member, isMe, isOwner, onEdit, onRemove, onInvite }) {
         )}
       </div>
 
-      {/* Badge OWNER/MEMBER */}
       {isOwner && (
         <span style={{
           fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 4,
