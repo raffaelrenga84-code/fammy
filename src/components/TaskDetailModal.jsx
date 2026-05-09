@@ -28,6 +28,7 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
   const [newComment, setNewComment] = useState('');
   const [assignees, setAssignees] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [showDelegate, setShowDelegate] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,21 +89,25 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
   const isSoleAssignee = isAssigned && assignees.length === 1;
   const isCoAssignee = isAssigned && assignees.length > 1;
 
-  // CLAIM solo per me: cancella tutti gli altri assignee e tieni solo me
+  // CLAIM solo per me: salva snapshot della lista corrente, poi cancella
+  // tutti gli altri e tieni solo me.
   const claimOnly = async () => {
     if (!me) return;
     setBusy(true);
-    // Cancella TUTTI gli assignee esistenti
+    // Snapshot: salva la lista corrente per poterla ripristinare al "Ho un imprevisto".
+    // Se delegated_from esiste già, NON sovrascriverlo (preserva la prima lista originale).
+    const snapshot = (task.delegated_from && task.delegated_from.length > 0)
+      ? task.delegated_from
+      : assignees.map((a) => a.id);
+
     await supabase.from('task_assignees').delete().eq('task_id', task.id);
-    // Inserisci solo me
     await supabase.from('task_assignees').insert({ task_id: task.id, member_id: me.id });
-    // Reset urgenza, status -> taken, priority -> normal
     await supabase.from('tasks').update({
       status: 'taken',
       urgent: false,
       priority: 'normal',
+      delegated_from: snapshot,
     }).eq('id', task.id);
-    // Risposta automatica
     await supabase.from('task_responses').insert({
       task_id: task.id,
       author_id: me.id,
@@ -114,15 +119,21 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     onClosed();
   };
 
-  // Assegna a un membro specifico (sostituendo tutti gli altri)
+  // Delega a un membro specifico (sostituisce la lista corrente con solo quel membro).
+  // Salva anche lo snapshot per consentire un ripristino futuro.
   const assignToMember = async (memberId) => {
     setBusy(true);
+    const snapshot = (task.delegated_from && task.delegated_from.length > 0)
+      ? task.delegated_from
+      : assignees.map((a) => a.id);
+
     await supabase.from('task_assignees').delete().eq('task_id', task.id);
     await supabase.from('task_assignees').insert({ task_id: task.id, member_id: memberId });
     await supabase.from('tasks').update({
       status: 'taken',
       urgent: false,
       priority: 'normal',
+      delegated_from: snapshot,
     }).eq('id', task.id);
     const member = members.find((m) => m.id === memberId);
     await supabase.from('task_responses').insert({
@@ -136,32 +147,45 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     onClosed();
   };
 
-  // Rimuovi me (Ho un imprevisto): mantiene gli altri assignee, marca priority='high'
+  // "Ho un imprevisto": se c'è uno snapshot, ripristina TUTTI gli assignee
+  // originali (escluso me). Altrimenti rimuove solo me.
   const unassignMe = async () => {
     if (!me) return;
     setBusy(true);
-    await supabase.from('task_assignees').delete().eq('task_id', task.id).eq('member_id', me.id);
+
+    // Cancella TUTTI gli attuali assignee
+    await supabase.from('task_assignees').delete().eq('task_id', task.id);
+
+    // Determina la lista da ripristinare
+    let restoreIds = [];
+    if (task.delegated_from && task.delegated_from.length > 0) {
+      // Ripristina lista originale, escluso me
+      restoreIds = task.delegated_from.filter((id) => id !== me.id);
+    } else {
+      // Nessun snapshot: comportamento legacy = mantieni gli altri assegnati attuali
+      restoreIds = assignees.filter((a) => a.id !== me.id).map((a) => a.id);
+    }
+
+    if (restoreIds.length > 0) {
+      const rows = restoreIds.map((mid) => ({ task_id: task.id, member_id: mid }));
+      await supabase.from('task_assignees').insert(rows);
+    }
+
     await supabase.from('task_responses').insert({
       task_id: task.id,
       author_id: me.id,
       text: 'Ho un imprevisto — delego',
       type: 'system',
     });
-    const remaining = assignees.filter((a) => a.id !== me.id);
-    if (remaining.length === 0) {
-      // Nessun altro: torna a todo + priority high
-      await supabase.from('tasks').update({
-        status: 'todo',
-        urgent: true,
-        priority: 'high',
-      }).eq('id', task.id);
-    } else {
-      // Restano altri assignee: gli appare urgente
-      await supabase.from('tasks').update({
-        urgent: true,
-        priority: 'high',
-      }).eq('id', task.id);
-    }
+
+    // Aggiorna lo stato del task
+    await supabase.from('tasks').update({
+      status: restoreIds.length === 0 ? 'todo' : 'taken',
+      urgent: true,
+      priority: 'high',
+      delegated_from: null,
+    }).eq('id', task.id);
+
     setBusy(false);
     onChanged();
     onClosed();
@@ -183,6 +207,7 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
   };
 
   const otherMembers = members.filter((m) => m.id !== me?.id);
+  const hasOriginalGroup = task.delegated_from && task.delegated_from.length > 1;
 
   return (
     <div className="modal-bg" onClick={onClose}>
@@ -218,6 +243,11 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
                     </span>
                   ))}
                 </div>
+                {hasOriginalGroup && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: 'var(--km)', fontStyle: 'italic' }}>
+                    📌 Originalmente assegnato a {task.delegated_from.length} persone — al "Ho un imprevisto" tornerà a tutti.
+                  </div>
+                )}
               </div>
             )}
 
@@ -225,33 +255,21 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
             <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {!isAssigned && (
                 <>
-                  <button
-                    onClick={claimOnly}
-                    disabled={busy}
-                    style={primaryBtnStyle(busy)}
-                  >
+                  <button onClick={claimOnly} disabled={busy} style={primaryBtnStyle(busy)}>
                     ✋ Me ne occupo io
                   </button>
                   {otherMembers.length > 0 && (
-                    <AssignGrid members={otherMembers} onPick={assignToMember} busy={busy} />
+                    <AssignGrid title="👤 Assegna a" members={otherMembers} onPick={assignToMember} busy={busy} />
                   )}
                 </>
               )}
 
               {isCoAssignee && (
                 <>
-                  <button
-                    onClick={claimOnly}
-                    disabled={busy}
-                    style={primaryBtnStyle(busy)}
-                  >
+                  <button onClick={claimOnly} disabled={busy} style={primaryBtnStyle(busy)}>
                     ✋ Me ne occupo io (rendilo solo mio)
                   </button>
-                  <button
-                    onClick={unassignMe}
-                    disabled={busy}
-                    style={dangerBtnStyle(busy)}
-                  >
+                  <button onClick={unassignMe} disabled={busy} style={dangerBtnStyle(busy)}>
                     🚨 Ho un imprevisto — delego
                   </button>
                   <div style={{
@@ -266,13 +284,6 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
 
               {isSoleAssignee && (
                 <>
-                  <button
-                    onClick={unassignMe}
-                    disabled={busy}
-                    style={dangerBtnStyle(busy)}
-                  >
-                    🚨 Ho un imprevisto — delego
-                  </button>
                   <div style={{
                     padding: '12px 16px', background: 'var(--gnB)',
                     border: '1.5px solid var(--gn)', borderRadius: 12,
@@ -280,6 +291,23 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
                   }}>
                     ✓ Sei tu il responsabile
                   </div>
+                  <button onClick={unassignMe} disabled={busy} style={dangerBtnStyle(busy)}>
+                    🚨 Ho un imprevisto {hasOriginalGroup ? '— rimette in bacheca a tutti' : '— delego'}
+                  </button>
+                  <button
+                    onClick={() => setShowDelegate((v) => !v)}
+                    disabled={busy}
+                    style={{
+                      padding: '10px 14px', borderRadius: 12, border: '1.5px solid var(--ac)',
+                      background: 'white', color: 'var(--ac)', fontSize: 13, fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    👥 {showDelegate ? 'Annulla' : 'Lo fai tu? — delega a qualcuno'}
+                  </button>
+                  {showDelegate && otherMembers.length > 0 && (
+                    <AssignGrid title="👤 Delega a" members={otherMembers} onPick={assignToMember} busy={busy} />
+                  )}
                 </>
               )}
             </div>
@@ -405,7 +433,7 @@ function MiniAvatar({ member }) {
   );
 }
 
-function AssignGrid({ members, onPick, busy }) {
+function AssignGrid({ title, members, onPick, busy }) {
   return (
     <div style={{
       background: 'var(--ab)', border: '1.5px solid #B5D4F4',
@@ -415,10 +443,10 @@ function AssignGrid({ members, onPick, busy }) {
         fontSize: 11, fontWeight: 700, color: 'var(--ac)',
         letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 10,
       }}>
-        👤 Assegna a
+        {title}
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {members.slice(0, 6).map((m) => (
+        {members.slice(0, 8).map((m) => (
           <button
             key={m.id}
             onClick={() => onPick(m.id)}
