@@ -9,23 +9,20 @@ import TaskDetailModal from '../../components/TaskDetailModal.jsx';
 const CAT = { care: '❤️', home: '🏠', health: '💊', admin: '📋', spese: '💶', other: '📌' };
 
 export default function BachecaTab({ familyId, families, tasks, members, taskAssignees = [], me, session, isAll, onChanged }) {
-  const allMembers = members; // in HomeScreen ora carichiamo tutti i membri di tutte le famiglie
+  const allMembers = members;
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [selTask, setSelTask] = useState(null);
   const [openSections, setOpenSections] = useState({ mine: true, all: true, done: false });
-  // Menu priorità aperto: { taskId } oppure null
   const [priorityMenuOpen, setPriorityMenuOpen] = useState(null);
 
   const ST_LABEL = {
     todo: t('section_todo'), taken: 'In carico', done: 'Fatto', to_pay: 'Da pagare',
   };
 
-  // Lista assegnatari per ogni task
   const assigneesForTask = (taskId) => {
     const memberIds = taskAssignees.filter((a) => a.task_id === taskId).map((a) => a.member_id);
     if (memberIds.length === 0) {
-      // fallback al campo legacy assigned_to
       const t = tasks.find((x) => x.id === taskId);
       if (t?.assigned_to) {
         const m = members.find((x) => x.id === t.assigned_to);
@@ -36,10 +33,12 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
     return memberIds.map((id) => members.find((m) => m.id === id)).filter(Boolean);
   };
 
-  // Un task è "mio" se almeno uno degli assegnatari sono io
+  // Un task è "mio" SOLO se sono l'unico assegnatario.
+  // Se sono uno tra molti (es. assegnato a tutta la famiglia), resta in "Tutte"
+  // finché non clicco "Me ne occupo io" per claimarlo.
   const isMine = (task) => {
     const list = assigneesForTask(task.id);
-    return list.some((m) => m.user_id === session.user.id);
+    return list.length === 1 && list[0].user_id === session.user.id;
   };
 
   const todos = tasks.filter((task) => task.status !== 'done');
@@ -54,7 +53,6 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
   };
 
   const setPriority = async (taskId, priority) => {
-    // urgent resta sincronizzato con priority='high' per retrocompatibilità
     await supabase.from('tasks').update({
       priority,
       urgent: priority === 'high',
@@ -78,7 +76,6 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
           assignees={assigneesForTask(task.id)}
           statusLabel={ST_LABEL[task.status]}
           onClick={() => {
-            // Se il menu priorità è aperto, prima lo chiudiamo
             if (priorityMenuOpen?.taskId === task.id) {
               setPriorityMenuOpen(null);
             } else {
@@ -115,7 +112,6 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
 
   return (
     <>
-      {/* Reminder di compleanno il giorno prima */}
       <BirthdayReminder members={members} session={session} familyId={familyId} families={families} />
 
       <div style={{ marginBottom: 24 }}>
@@ -210,12 +206,10 @@ function CollapsibleSection({ label, count, open, onToggle, children, empty, acc
 }
 
 function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, priorityMenu, onSetPriority, onClosePriorityMenu }) {
-  // Colori semaforo
   const priority = task.priority || (task.urgent ? 'high' : 'normal');
   const priorityColor = priority === 'high' ? 'var(--rd)'
                       : priority === 'medium' ? '#F39C12'
                       : 'var(--gn)';
-  // Stile bordo card in base alla priorità (rosso/arancio enfatizzato)
   const cardStyle = priority === 'high' ? {
         borderLeft: '6px solid var(--rd)',
         borderRadius: 0,

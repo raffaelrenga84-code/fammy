@@ -27,14 +27,11 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [assignees, setAssignees] = useState([]);
-  const [showAssignMenu, setShowAssignMenu] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Carica commenti e assegnati
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Carica commenti
       const { data: commentsData } = await supabase
         .from('task_responses')
         .select('*')
@@ -42,7 +39,6 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
         .order('created_at');
       if (!cancelled) setComments(commentsData || []);
 
-      // Carica assignee
       const { data: assigneeData } = await supabase
         .from('task_assignees')
         .select('member_id')
@@ -76,6 +72,9 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     onChanged();
   };
 
+  // Solo il creatore può eliminare
+  const canDelete = !task.author_id || task.author_id === me?.id;
+
   const remove = async () => {
     if (!confirm('Eliminare questo incarico? Verrà cancellato anche dal database.')) return;
     setBusy(true);
@@ -84,43 +83,47 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     onClosed();
   };
 
-  // Verifica se io sono uno degli assignee
-  const isMineTask = assignees.some((a) => a.id === me?.id);
-  // Solo il creatore può eliminare. Se author_id è null (vecchio task), permetti a tutti.
-  const canDelete = !task.author_id || task.author_id === me?.id;
+  // Stato assegnazione
+  const isAssigned = assignees.some((a) => a.id === me?.id);
+  const isSoleAssignee = isAssigned && assignees.length === 1;
+  const isCoAssignee = isAssigned && assignees.length > 1;
 
-  // Assegna a me stesso
-  const assignToMe = async () => {
+  // CLAIM solo per me: cancella tutti gli altri assignee e tieni solo me
+  const claimOnly = async () => {
     if (!me) return;
     setBusy(true);
-    // Inserisci me in task_assignees
-    await supabase.from('task_assignees').insert({
-      task_id: task.id,
-      member_id: me.id,
-    });
-    // Aggiungi una risposta automatica
+    // Cancella TUTTI gli assignee esistenti
+    await supabase.from('task_assignees').delete().eq('task_id', task.id);
+    // Inserisci solo me
+    await supabase.from('task_assignees').insert({ task_id: task.id, member_id: me.id });
+    // Reset urgenza, status -> taken, priority -> normal
+    await supabase.from('tasks').update({
+      status: 'taken',
+      urgent: false,
+      priority: 'normal',
+    }).eq('id', task.id);
+    // Risposta automatica
     await supabase.from('task_responses').insert({
       task_id: task.id,
       author_id: me.id,
       text: 'Me ne occupo io ✓',
       type: 'system',
     });
-    // Cambia status a taken
-    await supabase.from('tasks').update({ status: 'taken' }).eq('id', task.id);
     setBusy(false);
     onChanged();
     onClosed();
   };
 
-  // Assegna a un membro specifico
+  // Assegna a un membro specifico (sostituendo tutti gli altri)
   const assignToMember = async (memberId) => {
     setBusy(true);
-    // Inserisci il membro in task_assignees
-    await supabase.from('task_assignees').insert({
-      task_id: task.id,
-      member_id: memberId,
-    });
-    // Aggiungi una risposta automatica
+    await supabase.from('task_assignees').delete().eq('task_id', task.id);
+    await supabase.from('task_assignees').insert({ task_id: task.id, member_id: memberId });
+    await supabase.from('tasks').update({
+      status: 'taken',
+      urgent: false,
+      priority: 'normal',
+    }).eq('id', task.id);
     const member = members.find((m) => m.id === memberId);
     await supabase.from('task_responses').insert({
       task_id: task.id,
@@ -128,38 +131,36 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
       text: `Ho assegnato a @${member?.name || 'Qualcuno'}`,
       type: 'system',
     });
-    // Cambia status a taken
-    await supabase.from('tasks').update({ status: 'taken' }).eq('id', task.id);
     setBusy(false);
-    setShowAssignMenu(false);
     onChanged();
     onClosed();
   };
 
-  // Rimuovi me stesso (Ho un imprevisto)
+  // Rimuovi me (Ho un imprevisto): mantiene gli altri assignee, marca priority='high'
   const unassignMe = async () => {
     if (!me) return;
     setBusy(true);
-    // Rimuovi me da task_assignees
-    await supabase
-      .from('task_assignees')
-      .delete()
-      .eq('task_id', task.id)
-      .eq('member_id', me.id);
-    // Aggiungi una risposta automatica
+    await supabase.from('task_assignees').delete().eq('task_id', task.id).eq('member_id', me.id);
     await supabase.from('task_responses').insert({
       task_id: task.id,
       author_id: me.id,
       text: 'Ho un imprevisto — delego',
       type: 'system',
     });
-    // Se non ci sono altri assignee, cambia status a todo e marca come urgent
     const remaining = assignees.filter((a) => a.id !== me.id);
     if (remaining.length === 0) {
-      await supabase.from('tasks').update({ status: 'todo', urgent: true }).eq('id', task.id);
+      // Nessun altro: torna a todo + priority high
+      await supabase.from('tasks').update({
+        status: 'todo',
+        urgent: true,
+        priority: 'high',
+      }).eq('id', task.id);
     } else {
-      // Anche se ci sono altri assignee, marca come urgent
-      await supabase.from('tasks').update({ urgent: true }).eq('id', task.id);
+      // Restano altri assignee: gli appare urgente
+      await supabase.from('tasks').update({
+        urgent: true,
+        priority: 'high',
+      }).eq('id', task.id);
     }
     setBusy(false);
     onChanged();
@@ -181,6 +182,8 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
     setBusy(false);
   };
 
+  const otherMembers = members.filter((m) => m.id !== me?.id);
+
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -193,126 +196,87 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
             {note && <p className="modal-sub">{note}</p>}
             {dueDate && <p className="modal-sub">📅 {new Date(dueDate).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</p>}
 
+            {/* Mostra elenco assegnatari */}
+            {assignees.length > 0 && (
+              <div style={{
+                marginTop: 12, padding: 10, background: 'var(--ab)',
+                borderRadius: 12, fontSize: 13,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ac)', marginBottom: 6, textTransform: 'uppercase' }}>
+                  👥 Assegnato a {assignees.length === 1 ? '' : `(${assignees.length})`}
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {assignees.map((a) => (
+                    <span key={a.id} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '4px 10px', background: 'white',
+                      border: '1px solid var(--sm)', borderRadius: 100,
+                      fontSize: 12, fontWeight: 600,
+                    }}>
+                      <MiniAvatar member={a} />
+                      {a.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* AZIONI RAPIDE */}
             <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {!isMineTask ? (
+              {!isAssigned && (
                 <>
-                  {/* Se NON sono assegnato: mostra "Me ne occupo io" */}
                   <button
-                    onClick={assignToMe}
+                    onClick={claimOnly}
                     disabled={busy}
-                    style={{
-                      padding: '12px 16px',
-                      borderRadius: 12,
-                      border: 'none',
-                      background: 'var(--tc)',
-                      color: 'white',
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      opacity: busy ? 0.6 : 1,
-                    }}
+                    style={primaryBtnStyle(busy)}
                   >
                     ✋ Me ne occupo io
                   </button>
-
-                  {/* Assegna a griglia di avatar */}
-                  <div style={{
-                    background: 'var(--ab)',
-                    border: '1.5px solid #B5D4F4',
-                    borderRadius: 12,
-                    padding: 12,
-                  }}>
-                    <div style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: 'var(--ac)',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase',
-                      marginBottom: 10,
-                    }}>
-                      👤 Assegna a
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {members
-                        .filter((m) => m.id !== me?.id)
-                        .slice(0, 5)
-                        .map((m) => (
-                          <button
-                            key={m.id}
-                            onClick={() => assignToMember(m.id)}
-                            disabled={busy}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              gap: 6,
-                              padding: '10px 12px',
-                              background: 'white',
-                              border: '1.5px solid var(--sm)',
-                              borderRadius: 12,
-                              cursor: 'pointer',
-                              opacity: busy ? 0.6 : 1,
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: 34,
-                                height: 34,
-                                borderRadius: 8,
-                                background: m.avatar_color || '#1C1611',
-                                color: 'white',
-                                fontSize: 13,
-                                fontWeight: 700,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
-                              {m.avatar_letter || m.name.charAt(0).toUpperCase()}
-                            </div>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--k)' }}>
-                              {m.name.split(' ')[0]}
-                            </span>
-                          </button>
-                        ))}
-                    </div>
-                  </div>
+                  {otherMembers.length > 0 && (
+                    <AssignGrid members={otherMembers} onPick={assignToMember} busy={busy} />
+                  )}
                 </>
-              ) : (
+              )}
+
+              {isCoAssignee && (
                 <>
-                  {/* Se SONO assegnato: mostra "Ho un imprevisto" */}
+                  <button
+                    onClick={claimOnly}
+                    disabled={busy}
+                    style={primaryBtnStyle(busy)}
+                  >
+                    ✋ Me ne occupo io (rendilo solo mio)
+                  </button>
                   <button
                     onClick={unassignMe}
                     disabled={busy}
-                    style={{
-                      padding: '12px 16px',
-                      borderRadius: 12,
-                      border: '1.5px solid #F5C6C3',
-                      background: 'var(--rdB)',
-                      color: 'var(--rd)',
-                      fontSize: 14,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      opacity: busy ? 0.6 : 1,
-                    }}
+                    style={dangerBtnStyle(busy)}
                   >
                     🚨 Ho un imprevisto — delego
                   </button>
-                  {/* Status read-only */}
                   <div style={{
-                    padding: '12px 16px',
-                    background: 'var(--gnB)',
-                    border: '1.5px solid var(--gn)',
-                    borderRadius: 12,
-                    fontSize: 13,
-                    color: 'var(--gn)',
-                    fontWeight: 600,
-                    textAlign: 'center',
+                    padding: '10px 14px', background: 'var(--ab)',
+                    border: '1px solid var(--sm)', borderRadius: 12,
+                    fontSize: 12, color: 'var(--km)', textAlign: 'center',
+                  }}>
+                    Sei tra i {assignees.length} responsabili. Chiunque tra voi può completarlo.
+                  </div>
+                </>
+              )}
+
+              {isSoleAssignee && (
+                <>
+                  <button
+                    onClick={unassignMe}
+                    disabled={busy}
+                    style={dangerBtnStyle(busy)}
+                  >
+                    🚨 Ho un imprevisto — delego
+                  </button>
+                  <div style={{
+                    padding: '12px 16px', background: 'var(--gnB)',
+                    border: '1.5px solid var(--gn)', borderRadius: 12,
+                    fontSize: 13, color: 'var(--gn)', fontWeight: 600, textAlign: 'center',
                   }}>
                     ✓ Sei tu il responsabile
                   </div>
@@ -406,6 +370,79 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function primaryBtnStyle(busy) {
+  return {
+    padding: '12px 16px', borderRadius: 12, border: 'none',
+    background: 'var(--tc)', color: 'white',
+    fontSize: 14, fontWeight: 700, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    gap: 6, opacity: busy ? 0.6 : 1,
+  };
+}
+
+function dangerBtnStyle(busy) {
+  return {
+    padding: '12px 16px', borderRadius: 12,
+    border: '1.5px solid #F5C6C3', background: 'var(--rdB)',
+    color: 'var(--rd)', fontSize: 14, fontWeight: 700,
+    cursor: 'pointer', opacity: busy ? 0.6 : 1,
+  };
+}
+
+function MiniAvatar({ member }) {
+  return (
+    <span style={{
+      width: 18, height: 18, borderRadius: 5,
+      background: member.avatar_color || '#1C1611',
+      color: 'white', fontSize: 10, fontWeight: 700,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    }}>{member.avatar_letter || (member.name || '?').charAt(0).toUpperCase()}</span>
+  );
+}
+
+function AssignGrid({ members, onPick, busy }) {
+  return (
+    <div style={{
+      background: 'var(--ab)', border: '1.5px solid #B5D4F4',
+      borderRadius: 12, padding: 12,
+    }}>
+      <div style={{
+        fontSize: 11, fontWeight: 700, color: 'var(--ac)',
+        letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 10,
+      }}>
+        👤 Assegna a
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {members.slice(0, 6).map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onPick(m.id)}
+            disabled={busy}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 6, padding: '10px 12px', background: 'white',
+              border: '1.5px solid var(--sm)', borderRadius: 12,
+              cursor: 'pointer', opacity: busy ? 0.6 : 1,
+            }}
+          >
+            <div style={{
+              width: 34, height: 34, borderRadius: 8,
+              background: m.avatar_color || '#1C1611', color: 'white',
+              fontSize: 13, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {m.avatar_letter || (m.name || '?').charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--k)' }}>
+              {(m.name || '').split(' ')[0]}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );
