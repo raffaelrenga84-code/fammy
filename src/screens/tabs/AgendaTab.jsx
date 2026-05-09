@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
 import AddEventModal from '../../components/AddEventModal.jsx';
+import TaskDetailModal from '../../components/TaskDetailModal.jsx';
 import CalendarShareModal from '../../components/CalendarShareModal.jsx';
 import ExportAllCalendarsModal from '../../components/ExportAllCalendarsModal.jsx';
+
+const TASK_CAT_EMOJI = { care: '❤️', home: '🏠', health: '💊', admin: '📋', spese: '💶', other: '📌' };
 
 // Espande gli eventi: per quelli ricorrenti, genera istanze nei giorni
 // pertinenti tra (start originale) e (recurring_until o +12 mesi).
@@ -19,14 +22,11 @@ function expandEvents(events) {
     }
     const start = new Date(ev.starts_at);
     const until = ev.recurring_until ? new Date(ev.recurring_until) : horizonEnd;
-    // Sempre genera anche l'istanza "originale"
     expanded.push(ev);
 
-    // Itera giorno per giorno fino a until, generando occorrenze
     const cursor = new Date(start);
     cursor.setDate(cursor.getDate() + 1);
     while (cursor <= until) {
-      // 0=Lun, 6=Dom (nel nostro schema)
       const wd = (cursor.getDay() + 6) % 7;
       if (ev.recurring_days.includes(wd)) {
         const occ = new Date(cursor);
@@ -45,9 +45,10 @@ function expandEvents(events) {
   return expanded;
 }
 
-export default function AgendaTab({ familyId, families, events, members, me, isAll, onChanged }) {
+export default function AgendaTab({ familyId, families, events, tasks = [], members, me, isAll, onChanged }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
+  const [selTask, setSelTask] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showExportAll, setShowExportAll] = useState(false);
   const [viewMonth, setViewMonth] = useState(() => {
@@ -57,27 +58,40 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
   const [openSections, setOpenSections] = useState({ today: true, future: true, past: false });
 
   const expandedEvents = expandEvents(events);
+  // Task con due_date che non sono done, da mostrare in calendario/agenda
+  const dueTasks = (tasks || []).filter((tk) => tk.due_date && tk.status !== 'done');
+
   const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   const today = new Date();
-  // Se un giorno è selezionato, usalo come punto di riferimento; altrimenti usa oggi
   const referenceDay = selectedDay || new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const startOfToday = new Date(referenceDay.getFullYear(), referenceDay.getMonth(), referenceDay.getDate());
   const endOfToday = new Date(referenceDay.getFullYear(), referenceDay.getMonth(), referenceDay.getDate() + 1);
 
-  // Non filtrare per selectedDay: mostra tutti gli eventi, ma suddivisi da referenceDay
-  const filtered = expandedEvents;
-
-  const todayEvents = filtered.filter((e) => {
+  // Eventi suddivisi per data
+  const todayEvents = expandedEvents.filter((e) => {
     const d = new Date(e.starts_at);
     return d >= startOfToday && d < endOfToday;
   });
-  const futureEvents = filtered.filter((e) => new Date(e.starts_at) >= endOfToday);
-  const pastEvents = filtered.filter((e) => new Date(e.starts_at) < startOfToday);
+  const futureEvents = expandedEvents.filter((e) => new Date(e.starts_at) >= endOfToday);
+  const pastEvents = expandedEvents.filter((e) => new Date(e.starts_at) < startOfToday);
+
+  // Task suddivisi per data
+  const taskDate = (tk) => new Date(tk.due_date + 'T09:00:00');
+  const todayTasks = dueTasks.filter((tk) => {
+    const d = taskDate(tk);
+    return d >= startOfToday && d < endOfToday;
+  });
+  const futureTasks = dueTasks.filter((tk) => taskDate(tk) >= endOfToday);
+  const pastTasks = dueTasks.filter((tk) => taskDate(tk) < startOfToday);
+
+  // Conteggi totali (eventi + task)
+  const todayCount = todayEvents.length + todayTasks.length;
+  const futureCount = futureEvents.length + futureTasks.length;
+  const pastCount = pastEvents.length + pastTasks.length;
 
   const removeEvent = async (event) => {
     if (!confirm(t('agenda_delete_confirm'))) return;
-    // Cancella sempre l'evento originale (non l'istanza ricorrente)
     const idToDelete = event._origId || event.id;
     await supabase.from('events').delete().eq('id', idToDelete);
     onChanged();
@@ -85,14 +99,29 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
 
   const targetFamilyId = familyId || families?.[0]?.id;
   const targetFamily = families?.find((f) => f.id === targetFamilyId);
-  const getFamily = (event) => families?.find((f) => f.id === event.family_id);
+  const getFamily = (item) => families?.find((f) => f.id === item.family_id);
   const toggle = (k) => setOpenSections((s) => ({ ...s, [k]: !s[k] }));
+
+  // Mescola eventi e task ordinati per data
+  const renderItems = (evts, tks, past) => {
+    const items = [
+      ...evts.map((e) => ({ kind: 'event', date: new Date(e.starts_at), data: e })),
+      ...tks.map((tk) => ({ kind: 'task', date: taskDate(tk), data: tk })),
+    ].sort((a, b) => a.date - b.date);
+
+    return items.slice(0, 80).map((it) => it.kind === 'event' ? (
+      <EventCard key={`e-${it.data.id}`} event={it.data} me={me} family={isAll ? getFamily(it.data) : null} past={past} onRemove={() => removeEvent(it.data)} />
+    ) : (
+      <TaskAsEventCard key={`t-${it.data.id}`} task={it.data} family={isAll ? getFamily(it.data) : null} past={past} onClick={() => setSelTask(it.data)} />
+    ));
+  };
 
   return (
     <>
       <MonthGrid
         month={viewMonth}
         events={expandedEvents}
+        tasks={dueTasks}
         selectedDay={selectedDay}
         onSelectDay={(d) => setSelectedDay(selectedDay && sameDay(selectedDay, d) ? null : d)}
         onPrev={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
@@ -114,7 +143,7 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
         </div>
       )}
 
-      {expandedEvents.length === 0 ? (
+      {(expandedEvents.length === 0 && dueTasks.length === 0) ? (
         <div className="empty">
           <div className="empty-emoji">📅</div>
           <h3>{t('agenda_empty_h')}</h3>
@@ -124,35 +153,31 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
         <>
           <CollapsibleSection
             label={t('agenda_today')}
-            count={todayEvents.length}
+            count={todayCount}
             open={openSections.today}
             onToggle={() => toggle('today')}
             accent="var(--am)"
           >
-            {todayEvents.length > 0
-              ? todayEvents.map((e) => <EventCard key={e.id} event={e} me={me} family={isAll ? getFamily(e) : null} onRemove={() => removeEvent(e)} />)
-              : <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>}
+            {todayCount > 0 ? renderItems(todayEvents, todayTasks, false) : <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>}
           </CollapsibleSection>
 
           <CollapsibleSection
             label={t('agenda_future')}
-            count={futureEvents.length}
+            count={futureCount}
             open={openSections.future}
             onToggle={() => toggle('future')}
           >
-            {futureEvents.length > 0
-              ? futureEvents.slice(0, 50).map((e) => <EventCard key={e.id} event={e} me={me} family={isAll ? getFamily(e) : null} onRemove={() => removeEvent(e)} />)
-              : <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>}
+            {futureCount > 0 ? renderItems(futureEvents, futureTasks, false) : <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>}
           </CollapsibleSection>
 
-          {pastEvents.length > 0 && (
+          {pastCount > 0 && (
             <CollapsibleSection
               label={t('agenda_past')}
-              count={pastEvents.length}
+              count={pastCount}
               open={openSections.past}
               onToggle={() => toggle('past')}
             >
-              {pastEvents.slice(0, 50).map((e) => <EventCard key={e.id} event={e} me={me} family={isAll ? getFamily(e) : null} past onRemove={() => removeEvent(e)} />)}
+              {renderItems(pastEvents, pastTasks, true)}
             </CollapsibleSection>
           )}
         </>
@@ -166,6 +191,17 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
           authorMemberId={me?.id}
           onClose={() => setShowAdd(false)}
           onCreated={() => { setShowAdd(false); onChanged(); }}
+        />
+      )}
+
+      {selTask && (
+        <TaskDetailModal
+          task={selTask}
+          members={members}
+          me={me}
+          onClose={() => setSelTask(null)}
+          onChanged={() => { onChanged(); }}
+          onClosed={() => setSelTask(null)}
         />
       )}
 
@@ -188,7 +224,7 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
   );
 }
 
-function MonthGrid({ month, events, selectedDay, onSelectDay, onPrev, onNext }) {
+function MonthGrid({ month, events, tasks = [], selectedDay, onSelectDay, onPrev, onNext }) {
   const { t } = useT();
   const weekdays = t('weekday_short');
   const months = t('months');
@@ -208,13 +244,23 @@ function MonthGrid({ month, events, selectedDay, onSelectDay, onPrev, onNext }) 
   const today = new Date();
   const isToday = (d) => d && today.getFullYear() === year && today.getMonth() === m && today.getDate() === d;
 
-  const eventsByDay = {};
+  // Eventi e task per giorno
+  const itemsByDay = {};
   events.forEach((e) => {
     const d = new Date(e.starts_at);
     if (d.getFullYear() === year && d.getMonth() === m) {
       const day = d.getDate();
-      if (!eventsByDay[day]) eventsByDay[day] = [];
-      eventsByDay[day].push(e);
+      if (!itemsByDay[day]) itemsByDay[day] = { events: 0, tasks: 0 };
+      itemsByDay[day].events += 1;
+    }
+  });
+  tasks.forEach((tk) => {
+    if (!tk.due_date) return;
+    const d = new Date(tk.due_date + 'T00:00:00');
+    if (d.getFullYear() === year && d.getMonth() === m) {
+      const day = d.getDate();
+      if (!itemsByDay[day]) itemsByDay[day] = { events: 0, tasks: 0 };
+      itemsByDay[day].tasks += 1;
     }
   });
 
@@ -230,12 +276,15 @@ function MonthGrid({ month, events, selectedDay, onSelectDay, onPrev, onNext }) 
       </div>
       <div className="month-cells" style={{ gap: 8 }}>
         {cells.map((d, i) => {
-          const eventCount = d && eventsByDay[d] ? eventsByDay[d].length : 0;
-          const hasEvents = eventCount > 0;
+          const dayItems = d ? itemsByDay[d] : null;
+          const eventCount = dayItems?.events || 0;
+          const taskCount = dayItems?.tasks || 0;
+          const totalCount = eventCount + taskCount;
+          const hasItems = totalCount > 0;
           const isSelected = d && selectedDay && selectedDay.getFullYear() === year && selectedDay.getMonth() === m && selectedDay.getDate() === d;
           const today_b = isToday(d);
           return (
-            <button key={i} className={`month-cell ${today_b ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasEvents ? 'has-events' : ''}`}
+            <button key={i} className={`month-cell ${today_b ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasItems ? 'has-events' : ''}`}
               disabled={!d}
               onClick={() => d && onSelectDay(new Date(year, m, d))}
               style={{
@@ -245,24 +294,23 @@ function MonthGrid({ month, events, selectedDay, onSelectDay, onPrev, onNext }) 
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: hasEvents ? 'var(--am)11' : 'white',
-                border: today_b ? '2px solid var(--am)' : isSelected ? '2px solid var(--ac)' : hasEvents ? '2px solid var(--am)33' : '1px solid var(--sm)',
+                background: hasItems ? 'var(--am)11' : 'white',
+                border: today_b ? '2px solid var(--am)' : isSelected ? '2px solid var(--ac)' : hasItems ? '2px solid var(--am)33' : '1px solid var(--sm)',
                 borderRadius: 12,
                 cursor: d ? 'pointer' : 'default',
                 transition: 'all 0.2s ease',
               }}>
               {d && <span className="month-day" style={{ fontSize: 18, fontWeight: 700, color: 'var(--k)' }}>{d}</span>}
-              {hasEvents && (
+              {hasItems && (
                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
+                  {/* Pallini blu per eventi, arancio per task */}
                   {Array.from({ length: Math.min(eventCount, 3) }).map((_, idx) => (
-                    <span key={idx} style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: 'var(--ac)',
-                    }} />
+                    <span key={`e${idx}`} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ac)' }} />
                   ))}
-                  {eventCount > 3 && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ac)' }}>+</span>}
+                  {Array.from({ length: Math.min(taskCount, 3) }).map((_, idx) => (
+                    <span key={`t${idx}`} style={{ width: 6, height: 6, borderRadius: '50%', background: '#F39C12' }} />
+                  ))}
+                  {totalCount > 6 && <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ac)' }}>+</span>}
                 </div>
               )}
             </button>
@@ -294,6 +342,15 @@ function MonthGrid({ month, events, selectedDay, onSelectDay, onPrev, onNext }) 
           }}>✕</button>
         </div>
       )}
+      {/* Legenda mini */}
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, fontSize: 11, color: 'var(--km)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ac)' }} /> Eventi
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F39C12' }} /> Incarichi
+        </span>
+      </div>
     </div>
   );
 }
@@ -313,7 +370,6 @@ function CollapsibleSection({ label, count, open, onToggle, children, accent }) 
 
 function EventCard({ event, me, family, past, onRemove }) {
   const start = new Date(event.starts_at);
-  // Solo il creatore dell'evento può eliminarlo. Se created_by è null (vecchio evento), permetti a tutti.
   const canDelete = !event.created_by || event.created_by === me?.id;
   return (
     <div className="card" style={{ opacity: past ? 0.6 : 1 }}>
@@ -353,6 +409,60 @@ function EventCard({ event, me, family, past, onRemove }) {
             style={{ background: 'none', border: 'none', color: 'var(--km)', fontSize: 16, padding: 4 }}
             title="Elimina (solo creatore)">✕</button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Card per task con due_date mostrato in agenda
+function TaskAsEventCard({ task, family, past, onClick }) {
+  const due = new Date(task.due_date + 'T00:00:00');
+  const priority = task.priority || (task.urgent ? 'high' : 'normal');
+  const accentColor = priority === 'high' ? 'var(--rd)' : priority === 'medium' ? '#F39C12' : '#F39C12';
+  return (
+    <div className="card" onClick={onClick} style={{
+      opacity: past ? 0.6 : 1,
+      cursor: 'pointer',
+      borderLeft: `4px solid ${accentColor}`,
+      background: priority === 'high' ? 'var(--rd)11' : '#F39C1211',
+    }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <div className="event-date">
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase' }}>
+            {due.toLocaleDateString(undefined, { month: 'short' })}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--k)' }}>
+            {due.getDate()}
+          </div>
+          <div style={{ fontSize: 11, color: '#F39C12', fontWeight: 700 }}>
+            📋
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {priority === 'high' && <span>🚨</span>}
+            <span>{TASK_CAT_EMOJI[task.category] || '📌'}</span>
+            <span>{task.title}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+            <span style={{
+              padding: '2px 8px', borderRadius: 100,
+              background: '#F39C1222', color: '#B36E00',
+              fontSize: 11, fontWeight: 600,
+            }}>Incarico</span>
+            {family && (
+              <span style={{
+                padding: '2px 8px', borderRadius: 100,
+                background: family.color ? family.color + '22' : 'var(--sm)',
+                color: family.color || 'var(--km)',
+                fontSize: 11, fontWeight: 600,
+              }}>
+                {family.emoji} {family.name}
+              </span>
+            )}
+            {task.note && <span style={{ fontSize: 12, color: 'var(--km)' }}>{task.note}</span>}
+          </div>
+        </div>
       </div>
     </div>
   );
