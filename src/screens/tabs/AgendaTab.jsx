@@ -52,8 +52,9 @@ function expandEvents(events) {
 //   - valori >6  = giorni specifici del mese (es. 10 = il 10 di ogni mese)
 function expandTasks(tasks) {
   const expanded = [];
+  // Per i task limita l'orizzonte a 6 mesi (evita liste infinite di ricorrenze)
   const horizonEnd = new Date();
-  horizonEnd.setMonth(horizonEnd.getMonth() + 12);
+  horizonEnd.setMonth(horizonEnd.getMonth() + 6);
 
   for (const tk of tasks) {
     if (!tk.due_date) continue;
@@ -337,6 +338,10 @@ function MonthGrid({ month, events, tasks = [], selectedDay, onSelectDay, onPrev
           const hasItems = totalCount > 0;
           const isSelected = d && selectedDay && selectedDay.getFullYear() === year && selectedDay.getMonth() === m && selectedDay.getDate() === d;
           const today_b = isToday(d);
+          // Giorni passati: prima della data di oggi → grigi/sbiaditi
+          const cellDate = d ? new Date(year, m, d) : null;
+          const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const isPast = cellDate && cellDate < todayMidnight;
           return (
             <button key={i} className={`month-cell ${today_b ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasItems ? 'has-events' : ''}`}
               disabled={!d}
@@ -348,13 +353,14 @@ function MonthGrid({ month, events, tasks = [], selectedDay, onSelectDay, onPrev
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: hasItems ? 'var(--am)11' : 'white',
+                background: hasItems ? 'var(--am)11' : isPast ? '#F5F2EC' : 'white',
                 border: today_b ? '2px solid var(--am)' : isSelected ? '2px solid var(--ac)' : hasItems ? '2px solid var(--am)33' : '1px solid var(--sm)',
                 borderRadius: 12,
                 cursor: d ? 'pointer' : 'default',
+                opacity: isPast && !hasItems ? 0.45 : 1,
                 transition: 'all 0.2s ease',
               }}>
-              {d && <span className="month-day" style={{ fontSize: 18, fontWeight: 700, color: 'var(--k)' }}>{d}</span>}
+              {d && <span className="month-day" style={{ fontSize: 18, fontWeight: 700, color: isPast ? 'var(--km)' : 'var(--k)' }}>{d}</span>}
               {hasItems && (
                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
                   {/* Pallini blu per eventi, arancio per task */}
@@ -497,6 +503,9 @@ function TaskAsEventCard({ task, family, past, onClick }) {
             {priority === 'high' && <span>🚨</span>}
             <span>{TASK_CAT_EMOJI[task.category] || '📌'}</span>
             <span>{task.title}</span>
+            {(task._isRecurringInstance || (task.recurring_days && task.recurring_days.length > 0)) && (
+              <span style={{ fontSize: 12 }} title="Ricorrente">🔁</span>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
             <span style={{
