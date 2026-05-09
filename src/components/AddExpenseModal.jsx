@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useT } from '../lib/i18n.jsx';
 
-export default function AddExpenseModal({ familyId, families = [], members, defaultPaidBy, onClose, onCreated }) {
+export default function AddExpenseModal({ familyId, families = [], members, defaultPaidBy, authorMemberId, onClose, onCreated }) {
   const { t } = useT();
   const [selectedFamily, setSelectedFamily] = useState(familyId || (families.length > 0 ? families[0].id : ''));
   const [amount, setAmount] = useState('');
@@ -96,6 +96,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
       description: description.trim() || null,
       paid_by: paidBy || null,
       paid_at: paidAt || null,
+      created_by: authorMemberId || null,
     }).select().single();
 
     if (e1) { setErr(e1.message); setBusy(false); return; }

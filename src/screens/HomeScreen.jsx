@@ -9,27 +9,24 @@ import FamilyTab from './tabs/FamilyTab.jsx';
 import ProfileTab from './tabs/ProfileTab.jsx';
 import NewFamilyModal from '../components/NewFamilyModal.jsx';
 import UpdateBanner from '../components/UpdateBanner.jsx';
+import OnboardingTour from '../components/OnboardingTour.jsx';
 
 export default function HomeScreen({ session, profile, families, onRefresh }) {
   const { t } = useT();
-  // activeFamily può essere un UUID specifico o 'all'
   const [activeFamily, setActiveFamily] = useState('all');
   const [activeTab, setActiveTab] = useState('bacheca');
   const [tasks, setTasks] = useState([]);
   const [members, setMembers] = useState([]);
   const [events, setEvents] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [taskAssignees, setTaskAssignees] = useState([]); // [{task_id, member_id}, ...]
+  const [taskAssignees, setTaskAssignees] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showNewFamily, setShowNewFamily] = useState(false);
-  const [showInstallBanner, setShowInstallBanner] = useState(() => {
-    // Mostra il banner solo se non è stato mai chiuso
-    const dismissed = localStorage.getItem('fammy_pwa_banner_dismissed');
-    return !dismissed;
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return !localStorage.getItem('fammy_onboarding_done'); } catch (e) { return false; }
   });
-  const [showUpdateBanner, setShowUpdateBanner] = useState(true); // Controllato da UpdateBanner
+  const [showUpdateBanner, setShowUpdateBanner] = useState(true);
 
-  // Attiva le notifiche push per gli eventi e compleanni
   const notificationControl = useEventNotifications(session, profile, families, events, taskAssignees, members);
 
   useEffect(() => {
@@ -38,12 +35,9 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
     }
   }, [families, activeFamily]);
 
-  // Carica dati: una famiglia o tutte
   useEffect(() => {
     if (!activeFamily) return;
     const dataFamilyIds = activeFamily === 'all' ? families.map((f) => f.id) : [activeFamily];
-    // I MEMBRI vengono SEMPRE caricati per TUTTE le famiglie dell'utente
-    // (così si può assegnare un task cross-famiglia)
     const allFamilyIds = families.map((f) => f.id);
     if (dataFamilyIds.length === 0) return;
 
@@ -77,70 +71,18 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
 
   const isAll = activeFamily === 'all';
   const family = isAll ? null : families.find((f) => f.id === activeFamily);
-  // "me" è il mio membro nella famiglia attiva (o uno qualsiasi se vista all)
   const me = isAll
     ? members.find((m) => m.user_id === session.user.id)
     : members.find((m) => m.user_id === session.user.id && m.family_id === activeFamily);
 
-  // Sul tab Profilo l'header con famiglie non ha senso: lo nascondiamo.
   const showHeader = activeTab !== 'profile';
-
-  const dismissBanner = () => {
-    localStorage.setItem('fammy_pwa_banner_dismissed', 'true');
-    setShowInstallBanner(false);
-  };
-
-  // Riconosce il device
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const hintText = isIOS ? t('pwa_banner_hint_ios') : t('pwa_banner_hint_android');
 
   return (
     <div className="scr">
-      {/* Banner: App Update Available */}
       {showUpdateBanner && <UpdateBanner onDismiss={() => setShowUpdateBanner(false)} />}
 
-      {/* Banner: Add to Home Screen (multilingua) */}
-      {showInstallBanner && (
-        <div style={{
-          background: 'linear-gradient(135deg, var(--ac) 0%, #4A90E2 100%)',
-          color: 'white',
-          padding: '14px 16px',
-          borderRadius: '12px 12px 0 0',
-          margin: '-16px -16px 16px -16px',
-          fontSize: 14,
-          lineHeight: 1.5,
-        }}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 20 }}>📱</span>
-            <div style={{ flex: 1 }}>
-              <strong style={{ display: 'block', marginBottom: 4 }}>{t('pwa_banner_title')}</strong>
-              <div style={{ fontSize: 12, opacity: 0.95, marginBottom: 8 }}>
-                {hintText}
-              </div>
-              <button onClick={dismissBanner} style={{
-                background: 'rgba(255,255,255,0.3)',
-                border: 'none',
-                color: 'white',
-                padding: '6px 12px',
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}>
-                {t('pwa_banner_dismiss')}
-              </button>
-            </div>
-            <button onClick={dismissBanner} style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              fontSize: 20,
-              cursor: 'pointer',
-              padding: 0,
-              lineHeight: 1,
-            }}>✕</button>
-          </div>
-        </div>
+      {showOnboarding && (
+        <OnboardingTour onClose={() => setShowOnboarding(false)} />
       )}
 
       {showHeader && (
@@ -175,6 +117,7 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
           <AgendaTab
             familyId={isAll ? null : activeFamily}
             events={events}
+            tasks={tasks}
             members={members}
             me={me}
             isAll={isAll}

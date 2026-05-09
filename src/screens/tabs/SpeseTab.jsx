@@ -112,9 +112,11 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
                     <div style={{ fontWeight: 700, fontFamily: 'var(--fs)', fontSize: 16 }}>
                       € {Number(e.amount).toFixed(2)}
                     </div>
-                    <button onClick={() => removeExpense(e.id)}
-                      style={{ background: 'none', border: 'none', color: 'var(--km)', fontSize: 16, padding: 4 }}
-                      title="✕">✕</button>
+                    {(!e.created_by || e.created_by === me?.id) && (
+                      <button onClick={() => removeExpense(e.id)}
+                        style={{ background: 'none', border: 'none', color: 'var(--km)', fontSize: 16, padding: 4 }}
+                        title="Elimina (solo creatore)">✕</button>
+                    )}
                   </div>
 
                   {expShares.length > 0 && (
@@ -169,6 +171,7 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
           families={families}
           members={members}
           defaultPaidBy={me?.id}
+          authorMemberId={me?.id}
           onClose={() => setShowAdd(false)}
           onCreated={() => { setShowAdd(false); onChanged(); }}
         />

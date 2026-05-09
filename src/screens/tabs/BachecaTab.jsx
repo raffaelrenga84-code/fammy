@@ -14,6 +14,8 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
   const [showAdd, setShowAdd] = useState(false);
   const [selTask, setSelTask] = useState(null);
   const [openSections, setOpenSections] = useState({ mine: true, all: true, done: false });
+  // Menu priorità aperto: { taskId } oppure null
+  const [priorityMenuOpen, setPriorityMenuOpen] = useState(null);
 
   const ST_LABEL = {
     todo: t('section_todo'), taken: 'In carico', done: 'Fatto', to_pay: 'Da pagare',
@@ -45,19 +47,25 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
   const myTasks = todos.filter(isMine);
   const otherTasks = todos.filter((t) => !isMine(t));
 
-  const toggleDone = async (e, task) => {
+  const openPriorityMenu = (e, task) => {
     e.stopPropagation();
-    const next = task.status === 'done' ? 'todo' : 'done';
-    await supabase.from('tasks').update({ status: next }).eq('id', task.id);
+    if (task.status === 'done') return;
+    setPriorityMenuOpen({ taskId: task.id });
+  };
+
+  const setPriority = async (taskId, priority) => {
+    // urgent resta sincronizzato con priority='high' per retrocompatibilità
+    await supabase.from('tasks').update({
+      priority,
+      urgent: priority === 'high',
+    }).eq('id', taskId);
+    setPriorityMenuOpen(null);
     onChanged();
   };
 
   const getFamily = (task) => families?.find((f) => f.id === task.family_id);
 
   const targetFamilyId = familyId || families?.[0]?.id;
-  const familyMembers = familyId
-    ? members.filter((m) => m.family_id === familyId)
-    : members.filter((m) => m.family_id === targetFamilyId);
 
   const toggle = (k) => setOpenSections((s) => ({ ...s, [k]: !s[k] }));
 
@@ -69,8 +77,18 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
           family={isAll ? getFamily(task) : null}
           assignees={assigneesForTask(task.id)}
           statusLabel={ST_LABEL[task.status]}
-          onClick={() => setSelTask(task)}
-          onCheck={(e) => toggleDone(e, task)}
+          onClick={() => {
+            // Se il menu priorità è aperto, prima lo chiudiamo
+            if (priorityMenuOpen?.taskId === task.id) {
+              setPriorityMenuOpen(null);
+            } else {
+              setSelTask(task);
+            }
+          }}
+          onCheck={(e) => openPriorityMenu(e, task)}
+          priorityMenu={priorityMenuOpen?.taskId === task.id}
+          onSetPriority={(p) => setPriority(task.id, p)}
+          onClosePriorityMenu={() => setPriorityMenuOpen(null)}
         />
       ))}
     </div>
@@ -191,25 +209,80 @@ function CollapsibleSection({ label, count, open, onToggle, children, empty, acc
   );
 }
 
-function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
+function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, priorityMenu, onSetPriority, onClosePriorityMenu }) {
+  // Colori semaforo
+  const priority = task.priority || (task.urgent ? 'high' : 'normal');
+  const priorityColor = priority === 'high' ? 'var(--rd)'
+                      : priority === 'medium' ? '#F39C12'
+                      : 'var(--gn)';
+  // Stile bordo card in base alla priorità (rosso/arancio enfatizzato)
+  const cardStyle = priority === 'high' ? {
+        borderLeft: '6px solid var(--rd)',
+        borderRadius: 0,
+        background: 'var(--rd)22',
+        boxShadow: '0 0 8px rgba(231, 76, 60, 0.3)',
+      } : priority === 'medium' ? {
+        borderLeft: '6px solid #F39C12',
+        borderRadius: 0,
+        background: '#F39C1222',
+      } : { borderRadius: 8 };
   return (
     <div
       className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`}
       onClick={onClick}
-      style={task.urgent ? {
-        borderLeft: '6px solid var(--rd)',
-        borderRadius: 0,
-        background: 'var(--rd)22',
-        boxShadow: '0 0 8px rgba(231, 76, 60, 0.3)'
-      } : { borderRadius: 8 }}
+      style={cardStyle}
     >
-      <div className="tc-row">
-        <button className="tc-check" onClick={onCheck}>
-          {task.status === 'done' ? '✓' : '○'}
+      <div className="tc-row" style={{ position: 'relative' }}>
+        <button
+          className="tc-check"
+          onClick={onCheck}
+          title={task.status === 'done' ? 'Fatto' : 'Imposta priorità'}
+          style={task.status !== 'done' ? {
+            background: priorityColor,
+            color: 'white',
+            border: `2px solid ${priorityColor}`,
+          } : {}}
+        >
+          {task.status === 'done' ? '✓' : ' '}
         </button>
+        {priorityMenu && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: 4,
+              background: 'white',
+              border: '1px solid var(--sm)',
+              borderRadius: 12,
+              padding: 8,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 10,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              minWidth: 200,
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase', padding: '4px 8px' }}>
+              Priorità
+            </div>
+            <PrioBtn color="var(--gn)" label="🟢 Normale" onClick={() => onSetPriority('normal')} active={priority === 'normal'} />
+            <PrioBtn color="#F39C12" label="🟠 Attenzione" onClick={() => onSetPriority('medium')} active={priority === 'medium'} />
+            <PrioBtn color="var(--rd)" label="🔴 Urgente / Imprevisto" onClick={() => onSetPriority('high')} active={priority === 'high'} />
+            <button
+              onClick={onClosePriorityMenu}
+              style={{
+                marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--sm)',
+                background: 'white', fontSize: 12, color: 'var(--km)', cursor: 'pointer',
+              }}
+            >Annulla</button>
+          </div>
+        )}
         <span className="tc-emoji">{CAT[task.category] || '📌'}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="tc-title" style={task.urgent ? { color: 'var(--rd)', fontWeight: 700, fontSize: 14 } : {}}>{task.urgent ? '🚨 ' : ''}{task.title}</div>
+          <div className="tc-title" style={priority === 'high' ? { color: 'var(--rd)', fontWeight: 700, fontSize: 14 } : {}}>{priority === 'high' ? '🚨 ' : ''}{task.title}</div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
             {assignees.length > 0 && (
               <span style={{
@@ -255,4 +328,20 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck }) {
 function fmtDate(d) {
   if (!d) return '';
   return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
+function PrioBtn({ color, label, onClick, active }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '8px 10px', borderRadius: 8,
+        border: active ? `2px solid ${color}` : '1px solid var(--sm)',
+        background: active ? `${color}22` : 'white',
+        fontSize: 13, fontWeight: 600, textAlign: 'left', cursor: 'pointer',
+      }}
+    >
+      {label}{active ? ' ✓' : ''}
+    </button>
+  );
 }

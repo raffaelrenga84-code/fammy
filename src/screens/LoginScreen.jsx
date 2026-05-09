@@ -8,9 +8,15 @@ export default function LoginScreen() {
 
   const loginWithProvider = async (provider) => {
     setErrorMsg('');
+    const options = {
+      redirectTo: window.location.origin,
+    };
+    if (provider === 'google') {
+      options.scopes = 'email profile https://www.googleapis.com/auth/user.birthday.read';
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin },
+      options,
     });
     if (error) setErrorMsg(error.message);
   };
@@ -34,7 +40,6 @@ export default function LoginScreen() {
       <h1 className="login-h">FAMMY</h1>
       <p className="login-s" style={{ whiteSpace: 'pre-line' }}>{t('app_tagline')}</p>
 
-      {/* Login con Google solamente */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button type="button" className="oauth-btn" onClick={() => loginWithProvider('google')} style={{ padding: '12px 16px', fontSize: 14 }}>
           <GoogleIcon />
@@ -57,4 +62,3 @@ function GoogleIcon() {
     </svg>
   );
 }
-

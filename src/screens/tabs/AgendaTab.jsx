@@ -130,7 +130,7 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
             accent="var(--am)"
           >
             {todayEvents.length > 0
-              ? todayEvents.map((e) => <EventCard key={e.id} event={e} family={isAll ? getFamily(e) : null} onRemove={() => removeEvent(e)} />)
+              ? todayEvents.map((e) => <EventCard key={e.id} event={e} me={me} family={isAll ? getFamily(e) : null} onRemove={() => removeEvent(e)} />)
               : <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>}
           </CollapsibleSection>
 
@@ -141,7 +141,7 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
             onToggle={() => toggle('future')}
           >
             {futureEvents.length > 0
-              ? futureEvents.slice(0, 50).map((e) => <EventCard key={e.id} event={e} family={isAll ? getFamily(e) : null} onRemove={() => removeEvent(e)} />)
+              ? futureEvents.slice(0, 50).map((e) => <EventCard key={e.id} event={e} me={me} family={isAll ? getFamily(e) : null} onRemove={() => removeEvent(e)} />)
               : <p style={{ padding: '0 22px 12px', color: 'var(--km)', fontSize: 13 }}>—</p>}
           </CollapsibleSection>
 
@@ -152,7 +152,7 @@ export default function AgendaTab({ familyId, families, events, members, me, isA
               open={openSections.past}
               onToggle={() => toggle('past')}
             >
-              {pastEvents.slice(0, 50).map((e) => <EventCard key={e.id} event={e} family={isAll ? getFamily(e) : null} past onRemove={() => removeEvent(e)} />)}
+              {pastEvents.slice(0, 50).map((e) => <EventCard key={e.id} event={e} me={me} family={isAll ? getFamily(e) : null} past onRemove={() => removeEvent(e)} />)}
             </CollapsibleSection>
           )}
         </>
@@ -311,8 +311,10 @@ function CollapsibleSection({ label, count, open, onToggle, children, accent }) 
   );
 }
 
-function EventCard({ event, family, past, onRemove }) {
+function EventCard({ event, me, family, past, onRemove }) {
   const start = new Date(event.starts_at);
+  // Solo il creatore dell'evento può eliminarlo. Se created_by è null (vecchio evento), permetti a tutti.
+  const canDelete = !event.created_by || event.created_by === me?.id;
   return (
     <div className="card" style={{ opacity: past ? 0.6 : 1 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -346,8 +348,11 @@ function EventCard({ event, family, past, onRemove }) {
           {event.location && <div style={{ color: 'var(--km)', fontSize: 13, marginTop: 4 }}>📍 {event.location}</div>}
           {event.description && <div style={{ color: 'var(--km)', fontSize: 13, marginTop: 4 }}>{event.description}</div>}
         </div>
-        <button onClick={onRemove}
-          style={{ background: 'none', border: 'none', color: 'var(--km)', fontSize: 16, padding: 4 }}>✕</button>
+        {canDelete && (
+          <button onClick={onRemove}
+            style={{ background: 'none', border: 'none', color: 'var(--km)', fontSize: 16, padding: 4 }}
+            title="Elimina (solo creatore)">✕</button>
+        )}
       </div>
     </div>
   );

@@ -86,6 +86,8 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
 
   // Verifica se io sono uno degli assignee
   const isMineTask = assignees.some((a) => a.id === me?.id);
+  // Solo il creatore può eliminare. Se author_id è null (vecchio task), permetti a tutti.
+  const canDelete = !task.author_id || task.author_id === me?.id;
 
   // Assegna a me stesso
   const assignToMe = async () => {
@@ -361,7 +363,9 @@ export default function TaskDetailModal({ task, members, me, onClose, onChanged,
             <div className="row" style={{ marginTop: 24 }}>
               <button className="btn secondary" onClick={onClose}>Chiudi</button>
               <button className="btn secondary" onClick={() => setEditing(true)}>Modifica</button>
-              <button className="btn danger" onClick={remove} disabled={busy}>Elimina</button>
+              {canDelete && (
+                <button className="btn danger" onClick={remove} disabled={busy}>Elimina</button>
+              )}
             </div>
           </>
         ) : (

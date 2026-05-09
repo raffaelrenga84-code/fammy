@@ -16,6 +16,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
   const [openOtherFamilies, setOpenOtherFamilies] = useState(false);
   const [expandedFamilies, setExpandedFamilies] = useState({}); // {familyId: boolean}
   const [inviteMenuOpen, setInviteMenuOpen] = useState(null); // familyId che ha il menu aperto
+  const [editingFamilyAll, setEditingFamilyAll] = useState(null); // family object in vista "Tutte"
 
   const toggleFamilyExpanded = (familyId) => {
     setExpandedFamilies((prev) => ({ ...prev, [familyId]: !prev[familyId] }));
@@ -47,6 +48,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
           const familyMembers = members.filter((m) => m.family_id === f.id);
           const isExpanded = expandedFamilies[f.id] || false;
           const inviteOpen = inviteMenuOpen === f.id;
+          const isFamilyOwner = f.created_by === session.user.id;
           return (
             <div key={f.id} style={{ marginBottom: 12, position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: inviteOpen ? 8 : 0 }}>
@@ -77,6 +79,17 @@ export default function FamilyTab({ family, members, session, families, activeFa
                   title="Invita">
                   💌 Invita
                 </button>
+                {isFamilyOwner && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingFamilyAll(f); }}
+                    style={{
+                      padding: '10px 12px', background: 'white', border: '1px solid var(--sm)',
+                      borderRadius: 12, cursor: 'pointer', fontSize: 16,
+                    }}
+                    title="Modifica famiglia (solo creatore)">
+                    ⚙️
+                  </button>
+                )}
               </div>
 
               {/* Menu invito dropdown */}
@@ -156,6 +169,15 @@ export default function FamilyTab({ family, members, session, families, activeFa
             {t('new_family_btn')}
           </button>
         </div>
+
+        {editingFamilyAll && (
+          <EditFamilyModal
+            family={editingFamilyAll}
+            onClose={() => setEditingFamilyAll(null)}
+            onSaved={() => { setEditingFamilyAll(null); onChanged(); }}
+            onDeleted={() => { setEditingFamilyAll(null); onChanged(); }}
+          />
+        )}
       </>
     );
   }
