@@ -45,6 +45,53 @@ function expandEvents(events) {
   return expanded;
 }
 
+// Espande i task ricorrenti: per ogni task con due_date e recurring_days,
+// genera istanze nei giorni pertinenti tra (due_date) e (recurring_until o +12 mesi).
+// recurring_days[] contiene:
+//   - valori 0..6 = giorni della settimana (0=Lun, 6=Dom)
+//   - valori >6  = giorni specifici del mese (es. 10 = il 10 di ogni mese)
+function expandTasks(tasks) {
+  const expanded = [];
+  const horizonEnd = new Date();
+  horizonEnd.setMonth(horizonEnd.getMonth() + 12);
+
+  for (const tk of tasks) {
+    if (!tk.due_date) continue;
+    if (!tk.recurring_days || tk.recurring_days.length === 0) {
+      expanded.push(tk);
+      continue;
+    }
+
+    const start = new Date(tk.due_date + 'T00:00:00');
+    const until = tk.recurring_until ? new Date(tk.recurring_until + 'T23:59:59') : horizonEnd;
+    expanded.push(tk);
+
+    const weekdays = tk.recurring_days.filter((v) => v <= 6);
+    const monthDays = tk.recurring_days.filter((v) => v > 6);
+
+    const cursor = new Date(start);
+    cursor.setDate(cursor.getDate() + 1);
+    while (cursor <= until) {
+      const wd = (cursor.getDay() + 6) % 7; // 0=Lun..6=Dom
+      const dom = cursor.getDate();
+      const matches = weekdays.includes(wd) || monthDays.includes(dom);
+      if (matches) {
+        const occDate = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
+        expanded.push({
+          ...tk,
+          id: `${tk.id}__${occDate}`,
+          _origId: tk.id,
+          due_date: occDate,
+          _isRecurringInstance: true,
+        });
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
+  return expanded;
+}
+
+
 export default function AgendaTab({ familyId, families, events, tasks = [], members, me, isAll, onChanged }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
@@ -58,8 +105,10 @@ export default function AgendaTab({ familyId, families, events, tasks = [], memb
   const [openSections, setOpenSections] = useState({ today: true, future: true, past: false });
 
   const expandedEvents = expandEvents(events);
-  // Task con due_date che non sono done, da mostrare in calendario/agenda
-  const dueTasks = (tasks || []).filter((tk) => tk.due_date && tk.status !== 'done');
+  // Task con due_date che non sono done, da mostrare in calendario/agenda.
+  // Espandi le ricorrenze (settimanali + giorni del mese).
+  const baseDueTasks = (tasks || []).filter((tk) => tk.due_date && tk.status !== 'done');
+  const dueTasks = expandTasks(baseDueTasks);
 
   const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
@@ -112,7 +161,12 @@ export default function AgendaTab({ familyId, families, events, tasks = [], memb
     return items.slice(0, 80).map((it) => it.kind === 'event' ? (
       <EventCard key={`e-${it.data.id}`} event={it.data} me={me} family={isAll ? getFamily(it.data) : null} past={past} onRemove={() => removeEvent(it.data)} />
     ) : (
-      <TaskAsEventCard key={`t-${it.data.id}`} task={it.data} family={isAll ? getFamily(it.data) : null} past={past} onClick={() => setSelTask(it.data)} />
+      <TaskAsEventCard key={`t-${it.data.id}`} task={it.data} family={isAll ? getFamily(it.data) : null} past={past} onClick={() => {
+        // Se è un'istanza ricorrente, apri il task originale dal DB
+        const origId = it.data._origId || it.data.id;
+        const orig = baseDueTasks.find((tk) => tk.id === origId) || it.data;
+        setSelTask(orig);
+      }} />
     ));
   };
 
