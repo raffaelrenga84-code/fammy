@@ -33,6 +33,16 @@ export default function FamilyTab({ family, members, session, families, activeFa
     onChanged();
   };
 
+  // Per ogni membro: trova le ALTRE famiglie a cui appartiene (con stesso user_id),
+  // escludendo la famiglia corrente in cui è renderizzato.
+  const otherFamiliesFor = (member, currentFamilyId) => {
+    if (!member.user_id) return [];
+    const otherMembershipFamilyIds = members
+      .filter((m) => m.user_id === member.user_id && m.family_id !== currentFamilyId)
+      .map((m) => m.family_id);
+    return (families || []).filter((f) => otherMembershipFamilyIds.includes(f.id));
+  };
+
   if (isAll) {
     return (
       <>
@@ -51,7 +61,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
               background: 'white', border: '1px solid var(--sm)',
               borderRadius: 12, overflow: 'hidden',
             }}>
-              {/* Riga principale: nome famiglia */}
               <button
                 onClick={() => toggleFamilyExpanded(f.id)}
                 style={{
@@ -72,7 +81,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
                 }}>›</span>
               </button>
 
-              {/* Toolbar azioni allineate */}
               <div style={{
                 display: 'flex', alignItems: 'stretch',
                 borderTop: '1px solid var(--sm)',
@@ -103,7 +111,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
                 )}
               </div>
 
-              {/* Menu invito dropdown */}
               {inviteOpen && (
                 <div style={{
                   background: 'white', borderTop: '1px solid var(--sm)', padding: 12,
@@ -163,6 +170,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
                       member={m}
                       isMe={m.user_id === session.user.id}
                       isOwner={m.user_id === f.created_by}
+                      otherFamilies={otherFamiliesFor(m, f.id)}
                       onEdit={() => setEditingMember(m)}
                       onRemove={() => removeMember(m)}
                       onInvite={() => setShowFamilyInvite(true)}
@@ -218,6 +226,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
             member={m}
             isMe={m.user_id === session.user.id}
             isOwner={m.user_id === family.created_by}
+            otherFamilies={otherFamiliesFor(m, family.id)}
             onEdit={() => setEditingMember(m)}
             onRemove={() => removeMember(m)}
             onInvite={() => setShowFamilyInvite(true)}
@@ -270,7 +279,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
   );
 }
 
-function MemberCard({ member, isMe, isOwner, onEdit, onRemove, onInvite }) {
+function MemberCard({ member, isMe, isOwner, otherFamilies = [], onEdit, onRemove, onInvite }) {
   const canInvite = !isMe && !member.user_id;
 
   return (
@@ -291,6 +300,23 @@ function MemberCard({ member, isMe, isOwner, onEdit, onRemove, onInvite }) {
           {member.role || 'membro'}
           {member.user_id ? ' · ✓ ha account' : ' · senza account'}
         </div>
+        {/* Badge cross-famiglia */}
+        {otherFamilies.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+            <span style={{ fontSize: 10, color: 'var(--km)', alignSelf: 'center' }}>Anche in:</span>
+            {otherFamilies.map((f) => (
+              <span key={f.id} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+                padding: '2px 8px', borderRadius: 100,
+                background: f.color ? `${f.color}22` : 'var(--ab)',
+                color: f.color || 'var(--ac)',
+                fontSize: 10, fontWeight: 600,
+              }}>
+                {f.emoji} {f.name}
+              </span>
+            ))}
+          </div>
+        )}
         {member.birthday && (
           <div style={{ color: 'var(--km)', fontSize: 12, marginTop: 3 }}>
             🎂 {new Date(member.birthday).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}

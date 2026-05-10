@@ -8,11 +8,12 @@ import TaskDetailModal from '../../components/TaskDetailModal.jsx';
 
 const CAT = { care: '❤️', home: '🏠', health: '💊', admin: '📋', spese: '💶', other: '📌' };
 
-export default function BachecaTab({ familyId, families, tasks, members, taskAssignees = [], me, session, isAll, onChanged }) {
+export default function BachecaTab({ familyId, families, tasks, members, taskAssignees = [], me, session, isAll, onChanged, onOpenExpenseForTask }) {
   const allMembers = members;
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [selTask, setSelTask] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
   const [openSections, setOpenSections] = useState({ mine: true, all: true, done: false });
   const [priorityMenuOpen, setPriorityMenuOpen] = useState(null);
 
@@ -33,9 +34,7 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
     return memberIds.map((id) => members.find((m) => m.id === id)).filter(Boolean);
   };
 
-  // Un task è "mio" se:
-  // - sono stato delegato esplicitamente (delegated_to === me.id) → invito da accettare
-  // - oppure sono l'unico assegnatario
+  // Un task è "mio" se sono delegato esplicitamente, oppure se sono l'unico assegnatario
   const isMine = (task) => {
     if (task.delegated_to && me && task.delegated_to === me.id) return true;
     const list = assigneesForTask(task.id);
@@ -55,17 +54,14 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
 
   const setPriority = async (taskId, priority) => {
     await supabase.from('tasks').update({
-      priority,
-      urgent: priority === 'high',
+      priority, urgent: priority === 'high',
     }).eq('id', taskId);
     setPriorityMenuOpen(null);
     onChanged();
   };
 
   const getFamily = (task) => families?.find((f) => f.id === task.family_id);
-
   const targetFamilyId = familyId || families?.[0]?.id;
-
   const toggle = (k) => setOpenSections((s) => ({ ...s, [k]: !s[k] }));
 
   const renderTaskList = (list) => (
@@ -175,6 +171,20 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
           onClose={() => setSelTask(null)}
           onChanged={() => { onChanged(); }}
           onClosed={() => setSelTask(null)}
+          onEdit={(task) => { setSelTask(null); setEditingTask(task); }}
+          onOpenExpense={(task) => { setSelTask(null); onOpenExpenseForTask && onOpenExpenseForTask(task); }}
+        />
+      )}
+
+      {editingTask && (
+        <AddTaskModal
+          familyId={editingTask.family_id}
+          families={families}
+          members={allMembers}
+          authorMemberId={me?.id}
+          editingTask={editingTask}
+          onClose={() => setEditingTask(null)}
+          onUpdated={() => { setEditingTask(null); onChanged(); }}
         />
       )}
     </>
@@ -212,13 +222,11 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
                       : priority === 'medium' ? '#F39C12'
                       : 'var(--gn)';
   const cardStyle = priority === 'high' ? {
-        borderLeft: '6px solid var(--rd)',
-        borderRadius: 0,
+        borderLeft: '6px solid var(--rd)', borderRadius: 0,
         background: 'var(--rd)22',
         boxShadow: '0 0 8px rgba(231, 76, 60, 0.3)',
       } : priority === 'medium' ? {
-        borderLeft: '6px solid #F39C12',
-        borderRadius: 0,
+        borderLeft: '6px solid #F39C12', borderRadius: 0,
         background: '#F39C1222',
       } : { borderRadius: 8 };
   return (
@@ -233,46 +241,31 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
           onClick={onCheck}
           title={task.status === 'done' ? 'Fatto' : 'Imposta priorità'}
           style={task.status !== 'done' ? {
-            background: priorityColor,
-            color: 'white',
+            background: priorityColor, color: 'white',
             border: `2px solid ${priorityColor}`,
           } : {}}
         >
           {task.status === 'done' ? '✓' : ' '}
         </button>
         {priorityMenu && (
-          <div
-            onClick={(e) => e.stopPropagation()}
+          <div onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              marginTop: 4,
-              background: 'white',
-              border: '1px solid var(--sm)',
-              borderRadius: 12,
-              padding: 8,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              zIndex: 10,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
-              minWidth: 200,
-            }}
-          >
+              position: 'absolute', top: '100%', left: 0, marginTop: 4,
+              background: 'white', border: '1px solid var(--sm)', borderRadius: 12,
+              padding: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 200,
+            }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase', padding: '4px 8px' }}>
               Priorità
             </div>
             <PrioBtn color="var(--gn)" label="🟢 Normale" onClick={() => onSetPriority('normal')} active={priority === 'normal'} />
             <PrioBtn color="#F39C12" label="🟠 Attenzione" onClick={() => onSetPriority('medium')} active={priority === 'medium'} />
             <PrioBtn color="var(--rd)" label="🔴 Urgente / Imprevisto" onClick={() => onSetPriority('high')} active={priority === 'high'} />
-            <button
-              onClick={onClosePriorityMenu}
+            <button onClick={onClosePriorityMenu}
               style={{
                 marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--sm)',
                 background: 'white', fontSize: 12, color: 'var(--km)', cursor: 'pointer',
-              }}
-            >Annulla</button>
+              }}>Annulla</button>
           </div>
         )}
         <span className="tc-emoji">{CAT[task.category] || '📌'}</span>
@@ -287,15 +280,12 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
                 fontSize: 11, fontWeight: 600,
               }}>
                 {assignees.slice(0, 3).map((a) => (
-                  <Avatar
-                    key={a.id}
-                    name={a.name}
-                    avatarUrl={a.avatar_url}
+                  <Avatar key={a.id}
+                    name={a.name} avatarUrl={a.avatar_url}
                     avatarLetter={a.avatar_letter}
                     avatarColor={a.avatar_color || '#1C1611'}
                     size={16}
-                    style={{ display: 'inline-flex' }}
-                  />
+                    style={{ display: 'inline-flex' }} />
                 ))}
                 {assignees.length === 1 ? assignees[0].name : `${assignees.length}`}
               </span>
@@ -306,9 +296,7 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
                 background: family.color ? family.color + '22' : 'var(--sm)',
                 color: family.color || 'var(--km)',
                 fontSize: 11, fontWeight: 600,
-              }}>
-                {family.emoji} {family.name}
-              </span>
+              }}>{family.emoji} {family.name}</span>
             )}
             {task.note && <span className="tc-meta" style={{ marginTop: 0 }}>{task.note}</span>}
             {task.due_date && <span className="tc-meta" style={{ marginTop: 0 }}>📅 {fmtDate(task.due_date)}</span>}
@@ -327,15 +315,13 @@ function fmtDate(d) {
 
 function PrioBtn({ color, label, onClick, active }) {
   return (
-    <button
-      onClick={onClick}
+    <button onClick={onClick}
       style={{
         padding: '8px 10px', borderRadius: 8,
         border: active ? `2px solid ${color}` : '1px solid var(--sm)',
         background: active ? `${color}22` : 'white',
         fontSize: 13, fontWeight: 600, textAlign: 'left', cursor: 'pointer',
-      }}
-    >
+      }}>
       {label}{active ? ' ✓' : ''}
     </button>
   );

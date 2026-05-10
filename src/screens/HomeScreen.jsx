@@ -26,6 +26,12 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
     try { return !localStorage.getItem('fammy_onboarding_done'); } catch (e) { return false; }
   });
   const [showUpdateBanner, setShowUpdateBanner] = useState(true);
+  const [pendingExpenseTask, setPendingExpenseTask] = useState(null);
+
+  const openExpenseForTask = (task) => {
+    setPendingExpenseTask(task);
+    setActiveTab('spese');
+  };
 
   const notificationControl = useEventNotifications(session, profile, families, events, taskAssignees, members);
 
@@ -111,6 +117,7 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
             session={session}
             isAll={isAll}
             onChanged={refresh}
+            onOpenExpenseForTask={openExpenseForTask}
           />
         )}
         {activeTab === 'agenda' && (
@@ -126,7 +133,17 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
           />
         )}
         {activeTab === 'spese' && (
-          <SpeseTab familyId={isAll ? null : activeFamily} families={families} expenses={expenses} tasks={tasks} members={members} me={me} onChanged={refresh} />
+          <SpeseTab
+            familyId={isAll ? null : activeFamily}
+            families={families}
+            expenses={expenses}
+            tasks={tasks}
+            members={members}
+            me={me}
+            onChanged={refresh}
+            pendingTask={pendingExpenseTask}
+            onClearPendingTask={() => setPendingExpenseTask(null)}
+          />
         )}
         {activeTab === 'famiglia' && (
           <FamilyTab

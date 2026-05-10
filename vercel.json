@@ -12,9 +12,7 @@
       ]
     }
   ],
-  "routes": [
-    { "src": "/icon.png", "dest": "/icon.png" },
-    { "src": "/apple-touch-icon.png", "dest": "/apple-touch-icon.png" },
-    { "src": "/manifest.json", "dest": "/manifest.json" }
+  "rewrites": [
+    { "source": "/((?!api/|assets/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/" }
   ]
 }

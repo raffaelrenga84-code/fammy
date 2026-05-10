@@ -3,10 +3,14 @@ import { supabase } from '../../lib/supabase.js';
 import { useT } from '../../lib/i18n.jsx';
 import AddExpenseModal from '../../components/AddExpenseModal.jsx';
 
-export default function SpeseTab({ familyId, families = [], expenses, tasks, members, me, onChanged }) {
+export default function SpeseTab({ familyId, families = [], expenses, tasks, members, me, onChanged, pendingTask, onClearPendingTask }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
-  const [shares, setShares] = useState([]); // tutte le quote per le expenses caricate
+  const [shares, setShares] = useState([]);
+
+  useEffect(() => {
+    if (pendingTask) setShowAdd(true);
+  }, [pendingTask]);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,7 +32,6 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
     })
     .reduce((s, e) => s + Number(e.amount || 0), 0);
 
-  // Calcola saldi: per ogni coppia (debitore, creditore) la cifra netta
   const balances = computeBalances(expenses, shares, members);
 
   const removeExpense = async (id) => {
@@ -39,10 +42,8 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
 
   const settleShare = async (expenseId, memberId, settled) => {
     await supabase.from('expense_shares').update({
-      settled,
-      settled_at: settled ? new Date().toISOString() : null,
+      settled, settled_at: settled ? new Date().toISOString() : null,
     }).eq('expense_id', expenseId).eq('member_id', memberId);
-    // refresh shares
     const ids = expenses.map((e) => e.id);
     const { data } = await supabase.from('expense_shares').select('*').in('expense_id', ids);
     setShares(data || []);
@@ -62,7 +63,6 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
         </div>
       </div>
 
-      {/* Saldi famiglia */}
       {balances.length > 0 && (
         <>
           <div className="sh"><span className="sh-l">⚖️ {t('expenses_balances_h')}</span></div>
@@ -130,8 +130,7 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
                           if (!m) return null;
                           const isPayer = s.member_id === e.paid_by;
                           return (
-                            <div key={s.member_id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
-                              opacity: s.settled ? 0.5 : 1 }}>
+                            <div key={s.member_id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, opacity: s.settled ? 0.5 : 1 }}>
                               <Avatar m={m} small />
                               <span style={{ flex: 1, textDecoration: s.settled ? 'line-through' : 'none' }}>
                                 {m.name} {isPayer && <em style={{ color: 'var(--km)' }}>(ha pagato)</em>}
@@ -162,32 +161,30 @@ export default function SpeseTab({ familyId, families = [], expenses, tasks, mem
         </>
       )}
 
-      {/* FAB per aggiungere spesa */}
       <button className="fab" onClick={() => setShowAdd(true)}>+</button>
 
       {showAdd && (
         <AddExpenseModal
-          familyId={familyId}
+          familyId={pendingTask?.family_id || familyId}
           families={families}
           members={members}
           defaultPaidBy={me?.id}
           authorMemberId={me?.id}
-          onClose={() => setShowAdd(false)}
-          onCreated={() => { setShowAdd(false); onChanged(); }}
+          prefilledTask={pendingTask}
+          onClose={() => { setShowAdd(false); onClearPendingTask && onClearPendingTask(); }}
+          onCreated={() => { setShowAdd(false); onClearPendingTask && onClearPendingTask(); onChanged(); }}
         />
       )}
     </>
   );
 }
 
-// Calcola saldi netti tra membri (chi deve quanto a chi)
 function computeBalances(expenses, shares, members) {
-  // Mappa: per ogni membro debitore -> creditore -> totale
   const map = {};
   for (const exp of expenses) {
     const expShares = shares.filter((s) => s.expense_id === exp.id && !s.settled);
     for (const s of expShares) {
-      if (s.member_id === exp.paid_by) continue; // chi paga non deve a se stesso
+      if (s.member_id === exp.paid_by) continue;
       if (!map[s.member_id]) map[s.member_id] = {};
       if (!map[s.member_id][exp.paid_by]) map[s.member_id][exp.paid_by] = 0;
       map[s.member_id][exp.paid_by] += Number(s.amount);
@@ -197,12 +194,9 @@ function computeBalances(expenses, shares, members) {
   Object.keys(map).forEach((from) => {
     Object.keys(map[from]).forEach((to) => {
       const amount = map[from][to];
-      // Sottrai eventuale credito inverso (semplificazione netting)
       const reverse = map[to]?.[from] || 0;
       const net = amount - reverse;
-      if (net > 0.01) {
-        list.push({ from, to, amount: net });
-      }
+      if (net > 0.01) list.push({ from, to, amount: net });
     });
   });
   return list.sort((a, b) => b.amount - a.amount);

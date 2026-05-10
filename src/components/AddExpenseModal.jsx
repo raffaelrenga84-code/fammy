@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useT } from '../lib/i18n.jsx';
 
-export default function AddExpenseModal({ familyId, families = [], members, defaultPaidBy, authorMemberId, onClose, onCreated }) {
+export default function AddExpenseModal({ familyId, families = [], members, defaultPaidBy, authorMemberId, prefilledTask = null, onClose, onCreated }) {
   const { t } = useT();
-  const [selectedFamily, setSelectedFamily] = useState(familyId || (families.length > 0 ? families[0].id : ''));
+  const [selectedFamily, setSelectedFamily] = useState(prefilledTask?.family_id || familyId || (families.length > 0 ? families[0].id : ''));
   const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(prefilledTask ? `Pagamento: ${prefilledTask.title}` : '');
   const [paidBy, setPaidBy] = useState(defaultPaidBy || members[0]?.id || '');
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [splitMode, setSplitMode] = useState('equal'); // 'equal' | 'custom'
@@ -91,6 +91,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
 
     const { data: expense, error: e1 } = await supabase.from('expenses').insert({
       family_id: selectedFamily,
+      task_id: prefilledTask?.id || null,
       amount: totalAmount,
       currency: 'EUR',
       description: description.trim() || null,
@@ -150,6 +151,23 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>{t('addexpense_h')}</h2>
         <p className="modal-sub">{t('addexpense_sub')}</p>
+
+        {prefilledTask && (
+          <div style={{
+            marginBottom: 16, padding: 10, background: 'var(--ab)',
+            border: '1.5px solid var(--ac)', borderRadius: 12,
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: 13,
+          }}>
+            <span style={{ fontSize: 18 }}>📋</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase' }}>
+                Spesa per incarico
+              </div>
+              <div style={{ fontWeight: 600 }}>{prefilledTask.title}</div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={submit}>
           {/* Dropdown famiglia solo se in single-family view */}
