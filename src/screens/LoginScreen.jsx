@@ -8,15 +8,11 @@ export default function LoginScreen() {
 
   const loginWithProvider = async (provider) => {
     setErrorMsg('');
-    const options = {
-      redirectTo: window.location.origin,
-    };
-    if (provider === 'google') {
-      options.scopes = 'email profile https://www.googleapis.com/auth/user.birthday.read';
-    }
+    // Solo scope di base (email + profile) per evitare la verifica Google.
+    // Il compleanno l'utente lo inserisce a mano nel profilo.
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options,
+      options: { redirectTo: window.location.origin },
     });
     if (error) setErrorMsg(error.message);
   };
