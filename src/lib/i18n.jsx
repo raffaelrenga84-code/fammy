@@ -164,7 +164,7 @@ export const T = {
     plans_thanks: 'Sei già nel piano',
 
     // Bacheca collapsible
-    section_mine: '⭐ Solo mie',
+    section_mine: '⭐ Solo le mie da fare',
     section_all: '📋 Tutte',
     section_done_short: '✓ Fatti',
 
@@ -383,7 +383,7 @@ export const T = {
     plans_compare_h: 'Feature comparison',
     plans_thanks: 'You are already on the',
 
-    section_mine: '⭐ My tasks',
+    section_mine: '⭐ My to-do',
     section_all: '📋 All',
     section_done_short: '✓ Done',
 
@@ -639,7 +639,7 @@ export const T = {
     plans_compare_h: 'Comparaison',
     plans_thanks: 'Tu es déjà sur le plan',
 
-    section_mine: '⭐ Mes tâches',
+    section_mine: '⭐ À faire pour moi',
     section_all: '📋 Toutes',
     section_done_short: '✓ Faites',
 
@@ -895,7 +895,7 @@ export const T = {
     plans_compare_h: 'Vergleich',
     plans_thanks: 'Du bist bereits auf dem Plan',
 
-    section_mine: '⭐ Meine Aufgaben',
+    section_mine: '⭐ Meine zu erledigen',
     section_all: '📋 Alle',
     section_done_short: '✓ Erledigt',
 

@@ -34,9 +34,13 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
     return memberIds.map((id) => members.find((m) => m.id === id)).filter(Boolean);
   };
 
-  // Un task è "mio" se sono delegato esplicitamente, oppure se sono l'unico assegnatario
+  // Un task è in "Solo le mie da fare" SOLO quando ho fatto un commit esplicito:
+  //  - delegated_to === me  → invito che devo accettare/rifiutare
+  //  - status === 'taken' AND sono unico assegnatario → ho cliccato "Me ne occupo io"
+  // L'assegnazione passiva NON conta.
   const isMine = (task) => {
     if (task.delegated_to && me && task.delegated_to === me.id) return true;
+    if (task.status !== 'taken') return false;
     const list = assigneesForTask(task.id);
     return list.length === 1 && list[0].user_id === session.user.id;
   };
@@ -194,15 +198,12 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
 function CollapsibleSection({ label, count, open, onToggle, children, empty, accent, background }) {
   return (
     <div style={{ marginBottom: 4 }}>
-      <button
-        onClick={onToggle}
-        className="collapsible-header"
+      <button onClick={onToggle} className="collapsible-header"
         style={{
           borderLeft: accent ? `4px solid ${accent}` : '4px solid transparent',
           background: background ? `${background}15` : 'transparent',
           paddingLeft: 16,
-        }}
-      >
+        }}>
         <span className="collapsible-arrow" style={{ transform: open ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
         <span className="collapsible-label" style={{ fontWeight: 600, fontSize: 14 }}>{label}</span>
         <span className="collapsible-count" style={{ fontWeight: 700, fontSize: 12 }}>{count}</span>
@@ -230,21 +231,14 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
         background: '#F39C1222',
       } : { borderRadius: 8 };
   return (
-    <div
-      className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`}
-      onClick={onClick}
-      style={cardStyle}
-    >
+    <div className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`} onClick={onClick} style={cardStyle}>
       <div className="tc-row" style={{ position: 'relative' }}>
-        <button
-          className="tc-check"
-          onClick={onCheck}
+        <button className="tc-check" onClick={onCheck}
           title={task.status === 'done' ? 'Fatto' : 'Imposta priorità'}
           style={task.status !== 'done' ? {
             background: priorityColor, color: 'white',
             border: `2px solid ${priorityColor}`,
-          } : {}}
-        >
+          } : {}}>
           {task.status === 'done' ? '✓' : ' '}
         </button>
         {priorityMenu && (
@@ -255,9 +249,7 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
               padding: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 200,
             }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase', padding: '4px 8px' }}>
-              Priorità
-            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase', padding: '4px 8px' }}>Priorità</div>
             <PrioBtn color="var(--gn)" label="🟢 Normale" onClick={() => onSetPriority('normal')} active={priority === 'normal'} />
             <PrioBtn color="#F39C12" label="🟠 Attenzione" onClick={() => onSetPriority('medium')} active={priority === 'medium'} />
             <PrioBtn color="var(--rd)" label="🔴 Urgente / Imprevisto" onClick={() => onSetPriority('high')} active={priority === 'high'} />

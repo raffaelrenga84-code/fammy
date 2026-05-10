@@ -169,12 +169,20 @@ export default function AddTaskModal({
     }
 
     // === CREAZIONE ===
+    // Se l'unico assegnatario sono io stesso (autore), parto già in 'taken' così
+    // appare immediatamente in "Solo le mie da fare" senza dover cliccare "Me ne occupo io".
+    // In tutti gli altri casi (più assegnatari, o nessun assegnatario, o assegnatario diverso)
+    // status parte 'todo' e ognuno può claimarlo.
+    const initialStatus = (assignees.length === 1 && authorMemberId && assignees[0] === authorMemberId)
+      ? 'taken'
+      : 'todo';
+
     const { data: task, error: e1 } = await supabase.from('tasks').insert({
       family_id: taskFamily,
       title: title.trim(),
       note: note.trim() || null,
       category,
-      status: 'todo',
+      status: initialStatus,
       visibility: 'all',
       due_date: dueDate || null,
       author_id: authorMemberId || null,
