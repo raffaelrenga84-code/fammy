@@ -32,6 +32,8 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
   const [assignees, setAssignees] = useState([]);
   const [recurringDays, setRecurringDays] = useState([]);
   const [recurringUntil, setRecurringUntil] = useState('');
+  // Scope ricorrenza: 'thisMonth' (solo questo mese) | 'forever' (tutti i mesi futuri)
+  const [recurrenceScope, setRecurrenceScope] = useState('thisMonth');
   const [taskFamily, setTaskFamily] = useState(familyId);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -87,6 +89,26 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
   const submit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    // Scope ricorrenza: calcola recurring_until in base allo scope scelto
+    let computedUntil = null;
+    if (recurringDays.length > 0) {
+      if (recurringUntil) {
+        computedUntil = recurringUntil;
+      } else if (recurrenceScope === 'thisMonth') {
+        const base = dueDate ? new Date(dueDate + 'T00:00:00') : new Date();
+        const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+        computedUntil = lastOfMonth.toISOString().slice(0, 10);
+      } else if (recurrenceScope === 'forever') {
+        // Conferma esplicita
+        const ok = window.confirm(
+          'Sei sicuro di voler ripetere questo incarico per TUTTI i mesi futuri?\n\nVerrà mostrato fino a 6 mesi avanti. Puoi sempre cancellarlo dopo.'
+        );
+        if (!ok) return;
+        computedUntil = null; // null = usa default 6 mesi
+      }
+    }
+
     setBusy(true); setErr('');
 
     const { data: task, error: e1 } = await supabase.from('tasks').insert({
@@ -100,7 +122,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
       author_id: authorMemberId || null,
       assigned_to: assignees[0] || null,
       recurring_days: recurringDays.length > 0 ? recurringDays : null,
-      recurring_until: recurringDays.length > 0 && recurringUntil ? recurringUntil : null,
+      recurring_until: recurringDays.length > 0 ? computedUntil : null,
     }).select().single();
 
     if (e1) { setErr(e1.message); setBusy(false); return; }
@@ -334,6 +356,7 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                         Oppure seleziona specifici giorni del mese
                       </div>
                       <MonthCalendarPicker
+                        anchorDay={dueDate ? new Date(dueDate + 'T00:00:00').getDate() : null}
                         selectedDays={recurringDays.filter((d) => d > 6)}
                         onToggleDay={(day) => {
                           setRecurringDays((prev) =>
@@ -345,11 +368,55 @@ export default function AddTaskModal({ familyId, families = [], members, authorM
                       />
                     </div>
 
+                    {/* Scope ricorrenza */}
                     {recurringDays.length > 0 && (
-                      <div style={{ marginTop: 12 }}>
-                        <label htmlFor="until" style={{ fontSize: 11, color: 'var(--km)' }}>{t('repeat_until')}</label>
-                        <input id="until" type="date" className="input" style={{ marginTop: 4 }}
-                          value={recurringUntil} onChange={(e) => setRecurringUntil(e.target.value)} />
+                      <div style={{ marginTop: 16, padding: 12, background: 'white', border: '1.5px solid var(--sm)', borderRadius: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', marginBottom: 8, textTransform: 'uppercase' }}>
+                          \U0001f504 Per quanto tempo si ripete?
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <label style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                            border: `1.5px solid ${recurrenceScope === 'thisMonth' ? 'var(--ac)' : 'var(--sm)'}`,
+                            borderRadius: 8, cursor: 'pointer',
+                            background: recurrenceScope === 'thisMonth' ? 'var(--ab)' : 'white',
+                          }}>
+                            <input type="radio" name="rscope" value="thisMonth"
+                              checked={recurrenceScope === 'thisMonth'}
+                              onChange={() => setRecurrenceScope('thisMonth')} />
+                            <span style={{ fontSize: 13, fontWeight: 600 }}>
+                              \U0001f4c5 Solo questo mese
+                            </span>
+                          </label>
+                          <label style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                            border: `1.5px solid ${recurrenceScope === 'forever' ? 'var(--ac)' : 'var(--sm)'}`,
+                            borderRadius: 8, cursor: 'pointer',
+                            background: recurrenceScope === 'forever' ? 'var(--ab)' : 'white',
+                          }}>
+                            <input type="radio" name="rscope" value="forever"
+                              checked={recurrenceScope === 'forever'}
+                              onChange={() => setRecurrenceScope('forever')} />
+                            <span style={{ fontSize: 13, fontWeight: 600 }}>
+                              \U0001f504 Tutti i mesi futuri
+                              <span style={{ fontSize: 11, color: 'var(--km)', fontWeight: 500, marginLeft: 6 }}>
+                                (ti chiederemo conferma)
+                              </span>
+                            </span>
+                          </label>
+                          <details style={{ marginTop: 4 }}>
+                            <summary style={{ fontSize: 12, color: 'var(--km)', cursor: 'pointer', padding: '4px 8px' }}>
+                              … oppure imposta una data finale specifica
+                            </summary>
+                            <div style={{ marginTop: 8 }}>
+                              <input id="until" type="date" className="input"
+                                value={recurringUntil} onChange={(e) => setRecurringUntil(e.target.value)} />
+                              <p style={{ fontSize: 11, color: 'var(--km)', marginTop: 4 }}>
+                                Se imposti questa data, sostituisce la scelta sopra.
+                              </p>
+                            </div>
+                          </details>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -438,7 +505,7 @@ function avatarStyle(m) {
   };
 }
 
-function MonthCalendarPicker({ selectedDays, onToggleDay }) {
+function MonthCalendarPicker({ selectedDays, onToggleDay, anchorDay = null }) {
   const now = new Date();
   const today = now.getDate();
   const year = now.getFullYear();
@@ -463,6 +530,11 @@ function MonthCalendarPicker({ selectedDays, onToggleDay }) {
       <div style={{ marginBottom: 10, padding: '8px 10px', background: 'var(--sm)', borderRadius: 8, textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ac)' }}>
           📍 Oggi: {today} {new Date(year, month, today).toLocaleDateString('it-IT', { weekday: 'short' })}
+          {anchorDay && (
+            <span style={{ marginLeft: 8, color: '#F39C12' }}>
+              · 🔶 Data scelta: {anchorDay}
+            </span>
+          )}
         </div>
       </div>
 
@@ -479,8 +551,20 @@ function MonthCalendarPicker({ selectedDays, onToggleDay }) {
         {days.map((day, idx) => {
           const isPast = day && day < today;
           const isToday = day === today;
+          const isAnchor = anchorDay && day === anchorDay;
           const dayValue = day + 6;
           const isSelected = selectedDays.includes(dayValue);
+
+          let bg = 'white';
+          let border = 'var(--sm)';
+          let color = 'var(--k)';
+          if (isSelected) {
+            bg = 'var(--k)'; border = 'var(--k)'; color = 'white';
+          } else if (isAnchor) {
+            bg = '#F39C1233'; border = '#F39C12'; color = '#B36E00';
+          } else if (isToday) {
+            bg = 'var(--rd)22'; border = 'var(--rd)'; color = 'var(--rd)';
+          }
 
           return day ? (
             <button
@@ -488,18 +572,25 @@ function MonthCalendarPicker({ selectedDays, onToggleDay }) {
               type="button"
               onClick={() => !isPast && onToggleDay(dayValue)}
               disabled={isPast}
+              title={isAnchor ? 'Data del task — clicca per ripeterlo ogni mese in questo giorno' : undefined}
               style={{
-                aspectRatio: '1', borderRadius: 4, border: '1.5px solid',
-                borderColor: isToday ? 'var(--rd)' : isSelected ? 'var(--k)' : 'var(--sm)',
-                background: isSelected ? 'var(--k)' : isToday ? 'var(--rd)22' : 'white',
-                color: isSelected ? 'white' : isToday ? 'var(--rd)' : 'var(--k)',
-                fontSize: 11, fontWeight: isToday ? 700 : 600,
+                aspectRatio: '1', borderRadius: 4,
+                border: `1.5px solid ${border}`,
+                background: bg, color: color,
+                fontSize: 11, fontWeight: (isToday || isAnchor) ? 700 : 600,
                 cursor: isPast ? 'not-allowed' : 'pointer',
                 padding: 0,
                 opacity: isPast ? 0.4 : 1,
+                position: 'relative',
               }}
             >
               {day}
+              {isAnchor && !isSelected && (
+                <span style={{
+                  position: 'absolute', bottom: 1, left: '50%', transform: 'translateX(-50%)',
+                  width: 4, height: 4, borderRadius: '50%', background: '#F39C12',
+                }} />
+              )}
             </button>
           ) : (
             <div key={idx} />
@@ -509,7 +600,6 @@ function MonthCalendarPicker({ selectedDays, onToggleDay }) {
     </div>
   );
 }
-
 
 function DateField({ value, onChange }) {
   const ref = useRef(null);
@@ -573,4 +663,3 @@ function DateField({ value, onChange }) {
     </div>
   );
 }
-

@@ -33,10 +33,11 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
     return memberIds.map((id) => members.find((m) => m.id === id)).filter(Boolean);
   };
 
-  // Un task è "mio" SOLO se sono l'unico assegnatario.
-  // Se sono uno tra molti (es. assegnato a tutta la famiglia), resta in "Tutte"
-  // finché non clicco "Me ne occupo io" per claimarlo.
+  // Un task è "mio" se:
+  // - sono stato delegato esplicitamente (delegated_to === me.id) → invito da accettare
+  // - oppure sono l'unico assegnatario
   const isMine = (task) => {
+    if (task.delegated_to && me && task.delegated_to === me.id) return true;
     const list = assigneesForTask(task.id);
     return list.length === 1 && list[0].user_id === session.user.id;
   };

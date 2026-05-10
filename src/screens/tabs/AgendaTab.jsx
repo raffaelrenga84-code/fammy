@@ -68,7 +68,9 @@ function expandTasks(tasks) {
     expanded.push(tk);
 
     const weekdays = tk.recurring_days.filter((v) => v <= 6);
-    const monthDays = tk.recurring_days.filter((v) => v > 6);
+    // I giorni del mese sono salvati come (giorno + 6) per distinguerli dai weekdays.
+    // Es. il giorno 10 è memorizzato come 16. Decodifichiamo per il confronto con dom.
+    const monthDays = tk.recurring_days.filter((v) => v > 6).map((v) => v - 6);
 
     const cursor = new Date(start);
     cursor.setDate(cursor.getDate() + 1);
