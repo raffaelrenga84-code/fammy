@@ -11,16 +11,21 @@ export default function WelcomeScreen({ session, profile, onCreated }) {
 
   const initial = (profile?.avatar_letter || (profile?.display_name || 'U').charAt(0)).toUpperCase();
 
-  // Crea una famiglia "default" e va in bacheca
+  // Crea una famiglia "default" e va in bacheca.
+  // IMPORTANTE: il nome non deve mai derivare dal placeholder ('es. Famiglia Renga')
+  // perché altrimenti tutti gli utenti che skippano si ritrovano famiglie fake con
+  // lo stesso nome, generando confusione (vedi bug del 10/05/2026).
   const skipToBoard = async () => {
     if (busy) return;
+    const displayName = profile?.display_name || session.user.email.split('@')[0];
+    // Nome di fallback: "La famiglia di <Nome>" → univoco per persona, niente collisioni
+    const defaultFamilyName = `La famiglia di ${displayName}`;
     setBusy(true);
     try {
       const { data: fam } = await supabase
         .from('families')
-        .insert({ name: t('welcome_family_ph').replace('es. ', '').replace('e.g. ', '').replace('ex. ', '').replace('z.B. ', '') || 'La mia famiglia', emoji: '🏡', created_by: session.user.id })
+        .insert({ name: defaultFamilyName, emoji: '🏡', created_by: session.user.id })
         .select().single();
-      const displayName = profile?.display_name || session.user.email.split('@')[0];
       await supabase.from('members').insert({
         family_id: fam.id, user_id: session.user.id, name: displayName,
         role: 'tu', avatar_letter: displayName.charAt(0).toUpperCase(), status: 'active',
