@@ -33,7 +33,11 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
     setActiveTab('spese');
   };
 
-  const notificationControl = useEventNotifications(session, profile, families, events, taskAssignees, members);
+  // Auto-refresh via realtime + notifiche push per nuovi task/eventi/imprevisti
+  const notificationControl = useEventNotifications(
+    session, profile, families, events, taskAssignees, members,
+    () => setRefreshKey((k) => k + 1)
+  );
 
   useEffect(() => {
     if (activeFamily !== 'all' && !families.find((f) => f.id === activeFamily) && families.length > 0) {

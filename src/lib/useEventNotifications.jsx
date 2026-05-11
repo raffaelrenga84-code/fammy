@@ -2,69 +2,53 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabase.js';
 import { isBirthdayTomorrow } from './birthdayUtils.js';
 
-const NOTIFICATION_CHECK_INTERVAL = 60000; // 1 minuto
-
 const NOTIFICATIONS_ENABLED_KEY = 'fammy_notifications_enabled';
 
 /**
- * Hook per gestire le notifiche push per gli eventi
- * - Notifiche 30 minuti prima dei tuoi eventi
- * - Notifiche quando nuovi eventi sono creati nella famiglia
- * - Notifiche il giorno prima dei compleanni
+ * Hook per gestire le notifiche push e l'auto-refresh dei dati:
+ *  - notifica 30 min prima dei tuoi eventi
+ *  - notifica quando nuovi eventi/task vengono creati nella tua famiglia
+ *  - notifica quando un task ti viene delegato (delegated_to = me)
+ *  - notifica quando un task diventa urgente (priority='high', es. "Ho un imprevisto")
+ *  - notifica il giorno prima dei compleanni
+ *  - realtime subscriptions per refresh automatico
  */
-export function useEventNotifications(session, profile, families, events, taskAssignees, members = []) {
+export function useEventNotifications(session, profile, families, events, taskAssignees, members = [], onDataChange) {
   const [notificationPermission, setNotificationPermission] = useState(Notification?.permission || 'default');
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     const saved = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
-    return saved === null ? true : saved === 'true'; // Default true
+    return saved === null ? true : saved === 'true';
   });
-  const scheduledNotificationsRef = useRef(new Map()); // Traccia le notifiche già programmate
+  const scheduledNotificationsRef = useRef(new Map());
 
-  // Inizializza il service worker
+  // Service worker (per future push API)
   useEffect(() => {
-    if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-      return;
-    }
-
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
       console.log('SW registration failed:', err);
     });
   }, []);
 
-  // Richiedi permessi di notifica al primo accesso (non invasivo)
+  // Richiedi permessi notifica al primo accesso
   useEffect(() => {
     if (Notification?.permission === 'default' && session?.user?.id) {
-      // Mostra il prompt di permessi in modo non invasivo
       setTimeout(() => {
-        Notification.requestPermission().then((perm) => {
-          setNotificationPermission(perm);
-        });
-      }, 3000); // Aspetta 3 secondi dopo il caricamento
+        Notification.requestPermission().then((perm) => setNotificationPermission(perm));
+      }, 3000);
     }
   }, [session?.user?.id]);
 
-  // Monitora gli eventi e programma le notifiche
+  // Notifiche programmate 30 min prima degli eventi
   useEffect(() => {
-    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled) {
-      return;
-    }
+    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled) return;
 
-    // Trova i tuoi eventi (quelli assegnati a te)
-    const myEvents = events.filter((event) => {
-      const startTime = new Date(event.starts_at);
-      return startTime > new Date(); // Solo eventi futuri
-    });
-
+    const myEvents = events.filter((event) => new Date(event.starts_at) > new Date());
     myEvents.forEach((event) => {
       const notificationKey = `event-${event.id}`;
-
-      // Evita di programmare la stessa notifica due volte
-      if (scheduledNotificationsRef.current.has(notificationKey)) {
-        return;
-      }
+      if (scheduledNotificationsRef.current.has(notificationKey)) return;
 
       const eventTime = new Date(event.starts_at);
-      const notificationTime = new Date(eventTime.getTime() - 30 * 60 * 1000); // 30 minuti prima
+      const notificationTime = new Date(eventTime.getTime() - 30 * 60 * 1000);
       const now = new Date();
 
       if (notificationTime > now) {
@@ -73,86 +57,136 @@ export function useEventNotifications(session, profile, families, events, taskAs
           showEventNotification(event);
           scheduledNotificationsRef.current.delete(notificationKey);
         }, delay);
-
         scheduledNotificationsRef.current.set(notificationKey, timeoutId);
       }
     });
 
-    // Cleanup: cancella i timeout dei vecchi eventi
     return () => {
-      scheduledNotificationsRef.current.forEach((timeoutId) => {
-        clearTimeout(timeoutId);
-      });
+      scheduledNotificationsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
       scheduledNotificationsRef.current.clear();
     };
   }, [events, notificationPermission, session?.user?.id, notificationsEnabled]);
 
-  // Monitora gli eventi della famiglia per nuovi eventi
+  // === REALTIME: subscribe a tasks/events/expenses + notifiche per cambi rilevanti ===
   useEffect(() => {
-    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled) {
-      return;
-    }
+    if (!session?.user?.id) return;
+    if (!families || families.length === 0) return;
 
-    let lastCheckTime = new Date();
-    let unsubscribe = null;
+    const familyIds = families.map((f) => f.id);
+    const familyIdsCsv = familyIds.join(',');
+    const userId = session.user.id;
+    // Trova i member.id dell'utente nelle varie famiglie (per filtri di interesse)
+    const myMemberIds = (members || []).filter((m) => m.user_id === userId).map((m) => m.id);
 
-    const setupRealtimeListener = async () => {
-      if (!families || families.length === 0) return;
+    // TASKS — INSERT/UPDATE/DELETE
+    const tasksChannel = supabase
+      .channel('rt-tasks')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'tasks',
+        filter: `family_id=in.(${familyIdsCsv})`,
+      }, (payload) => {
+        // Refresh dei dati
+        if (typeof onDataChange === 'function') onDataChange();
 
-      const familyIds = families.map((f) => f.id);
+        if (notificationPermission !== 'granted' || !notificationsEnabled) return;
 
-      // Subscribe a nuovi eventi in tempo reale
-      const subscription = supabase
-        .from('events')
-        .on('*', (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newEvent = payload.new;
-            // Mostra notifica solo se l'evento è per una delle tue famiglie
-            if (familyIds.includes(newEvent.family_id) && newEvent.created_by !== session.user.id) {
-              const family = families.find((f) => f.id === newEvent.family_id);
-              showNewEventNotification(newEvent, family);
-            }
+        if (payload.eventType === 'INSERT') {
+          const t = payload.new;
+          const family = families.find((f) => f.id === t.family_id);
+          showNewTaskNotification(t, family);
+        } else if (payload.eventType === 'UPDATE') {
+          const oldT = payload.old;
+          const newT = payload.new;
+          // Notifica se diventa urgente (es. "Ho un imprevisto")
+          if (oldT?.priority !== 'high' && newT?.priority === 'high') {
+            const family = families.find((f) => f.id === newT.family_id);
+            showUrgentTaskNotification(newT, family);
           }
-        })
-        .subscribe();
+          // Notifica se viene delegato a me
+          if (oldT?.delegated_to !== newT?.delegated_to && newT?.delegated_to && myMemberIds.includes(newT.delegated_to)) {
+            const family = families.find((f) => f.id === newT.family_id);
+            showDelegatedTaskNotification(newT, family);
+          }
+        }
+      })
+      .subscribe();
 
-      return subscription;
-    };
+    // EVENTS — INSERT (esiste già nella vecchia logica ma raddoppio per coerenza)
+    const eventsChannel = supabase
+      .channel('rt-events')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'events',
+        filter: `family_id=in.(${familyIdsCsv})`,
+      }, (payload) => {
+        if (typeof onDataChange === 'function') onDataChange();
+        if (notificationPermission !== 'granted' || !notificationsEnabled) return;
+        if (payload.eventType === 'INSERT') {
+          const e = payload.new;
+          if (e.created_by !== userId && !myMemberIds.includes(e.created_by)) {
+            const family = families.find((f) => f.id === e.family_id);
+            showNewEventNotification(e, family);
+          }
+        }
+      })
+      .subscribe();
 
-    setupRealtimeListener().then((sub) => {
-      unsubscribe = sub;
-    });
+    // EXPENSES — refresh only (no notifica push, è meno time-sensitive)
+    const expensesChannel = supabase
+      .channel('rt-expenses')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'expenses',
+        filter: `family_id=in.(${familyIdsCsv})`,
+      }, () => {
+        if (typeof onDataChange === 'function') onDataChange();
+      })
+      .subscribe();
+
+    // TASK ASSIGNEES — refresh per cambi di assegnazione
+    const assigneesChannel = supabase
+      .channel('rt-task-assignees')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'task_assignees',
+      }, () => {
+        if (typeof onDataChange === 'function') onDataChange();
+      })
+      .subscribe();
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe.unsubscribe();
-      }
+      supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(expensesChannel);
+      supabase.removeChannel(assigneesChannel);
     };
-  }, [families, notificationPermission, session?.user?.id, notificationsEnabled]);
+  }, [families, members, session?.user?.id, notificationPermission, notificationsEnabled, onDataChange]);
 
-  // Monitora i compleanni e programma le notifiche il giorno prima
+  // Auto-refresh quando l'utente torna sull'app (tab focus)
   useEffect(() => {
-    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled || !members || members.length === 0) {
-      return;
-    }
+    if (typeof onDataChange !== 'function') return;
+    const onFocus = () => onDataChange();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') onDataChange();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [onDataChange]);
 
-    // Trova i compleanni domani
-    const birthdaysTomorrow = members.filter((member) => {
-      // Non notificare il compleanno della persona stessa
-      if (member.user_id === session.user.id) return false;
-      return isBirthdayTomorrow(member.birth_date);
+  // Compleanni: programma notifica per domani alle 9:00
+  useEffect(() => {
+    if (notificationPermission !== 'granted' || !session?.user?.id || !notificationsEnabled || !members || members.length === 0) return;
+
+    const birthdaysTomorrow = members.filter((m) => {
+      if (m.user_id === session.user.id) return false;
+      return isBirthdayTomorrow(m.birth_date);
     });
 
-    // Programma notifiche per ogni compleanno domani
     birthdaysTomorrow.forEach((member) => {
       const notificationKey = `birthday-${member.id}`;
+      if (scheduledNotificationsRef.current.has(notificationKey)) return;
 
-      // Evita notifiche duplicate
-      if (scheduledNotificationsRef.current.has(notificationKey)) {
-        return;
-      }
-
-      // Programma per domani mattina alle 9:00
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(9, 0, 0, 0);
@@ -164,16 +198,12 @@ export function useEventNotifications(session, profile, families, events, taskAs
           showBirthdayNotification(member);
           scheduledNotificationsRef.current.delete(notificationKey);
         }, delay);
-
         scheduledNotificationsRef.current.set(notificationKey, timeoutId);
       }
     });
 
     return () => {
-      // Cleanup
-      scheduledNotificationsRef.current.forEach((timeoutId) => {
-        clearTimeout(timeoutId);
-      });
+      scheduledNotificationsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
     };
   }, [members, notificationPermission, session?.user?.id, notificationsEnabled]);
 
@@ -182,9 +212,7 @@ export function useEventNotifications(session, profile, families, events, taskAs
     notificationsEnabled,
     requestPermission: () => {
       if (Notification?.permission === 'default') {
-        Notification.requestPermission().then((perm) => {
-          setNotificationPermission(perm);
-        });
+        Notification.requestPermission().then((perm) => setNotificationPermission(perm));
       }
     },
     setNotificationsEnabled: (enabled) => {
@@ -194,69 +222,66 @@ export function useEventNotifications(session, profile, families, events, taskAs
   };
 }
 
-/**
- * Mostra una notifica per un evento imminente
- */
 function showEventNotification(event) {
   if (!('Notification' in window)) return;
-
   const startTime = new Date(event.starts_at);
   const timeStr = startTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-
   const notification = new Notification(`📅 ${event.title}`, {
     body: `Tra 30 minuti alle ${timeStr}`,
-    icon: '/icon.png',
-    badge: '/icon.png',
-    tag: `event-${event.id}`,
-    requireInteraction: false,
+    icon: '/icon.png', badge: '/icon.png',
+    tag: `event-${event.id}`, requireInteraction: false,
   });
-
-  // Click apre l'app
-  notification.addEventListener('click', () => {
-    window.focus();
-    notification.close();
-  });
+  notification.addEventListener('click', () => { window.focus(); notification.close(); });
 }
 
-/**
- * Mostra una notifica per un nuovo evento creato da altri
- */
 function showNewEventNotification(event, family) {
   if (!('Notification' in window)) return;
-
   const startTime = new Date(event.starts_at);
   const dateStr = startTime.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-
   const notification = new Notification(`✨ Nuovo evento in ${family?.name || 'Famiglia'}`, {
     body: `${event.title} - ${dateStr}`,
-    icon: '/icon.png',
-    badge: '/icon.png',
-    tag: `new-event-${event.id}`,
-    requireInteraction: false,
+    icon: '/icon.png', badge: '/icon.png',
+    tag: `new-event-${event.id}`, requireInteraction: false,
   });
-
-  notification.addEventListener('click', () => {
-    window.focus();
-    notification.close();
-  });
+  notification.addEventListener('click', () => { window.focus(); notification.close(); });
 }
 
-/**
- * Mostra una notifica per un compleanno domani
- */
+function showNewTaskNotification(task, family) {
+  if (!('Notification' in window)) return;
+  const notification = new Notification(`📋 Nuovo incarico in ${family?.name || 'Famiglia'}`, {
+    body: task.title || 'Apri FAMMY per vederlo',
+    icon: '/icon.png', badge: '/icon.png',
+    tag: `new-task-${task.id}`, requireInteraction: false,
+  });
+  notification.addEventListener('click', () => { window.focus(); notification.close(); });
+}
+
+function showUrgentTaskNotification(task, family) {
+  if (!('Notification' in window)) return;
+  const notification = new Notification(`🚨 Incarico urgente in ${family?.name || 'Famiglia'}`, {
+    body: `${task.title} ha bisogno di attenzione`,
+    icon: '/icon.png', badge: '/icon.png',
+    tag: `urgent-task-${task.id}`, requireInteraction: true,
+  });
+  notification.addEventListener('click', () => { window.focus(); notification.close(); });
+}
+
+function showDelegatedTaskNotification(task, family) {
+  if (!('Notification' in window)) return;
+  const notification = new Notification(`🧡 Lo fai tu?`, {
+    body: `Ti hanno chiesto di occuparti di: ${task.title}`,
+    icon: '/icon.png', badge: '/icon.png',
+    tag: `delegated-task-${task.id}`, requireInteraction: true,
+  });
+  notification.addEventListener('click', () => { window.focus(); notification.close(); });
+}
+
 function showBirthdayNotification(member) {
   if (!('Notification' in window)) return;
-
   const notification = new Notification(`🎂 Compleanno domani!`, {
     body: `È il compleanno di ${member.name}! 🎉`,
-    icon: '/icon.png',
-    badge: '/icon.png',
-    tag: `birthday-${member.id}`,
-    requireInteraction: false,
+    icon: '/icon.png', badge: '/icon.png',
+    tag: `birthday-${member.id}`, requireInteraction: false,
   });
-
-  notification.addEventListener('click', () => {
-    window.focus();
-    notification.close();
-  });
+  notification.addEventListener('click', () => { window.focus(); notification.close(); });
 }

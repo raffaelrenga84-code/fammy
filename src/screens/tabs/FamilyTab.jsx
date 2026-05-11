@@ -12,10 +12,11 @@ export default function FamilyTab({ family, members, session, families, activeFa
   const [showAdd, setShowAdd] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [editingFamily, setEditingFamily] = useState(false);
-  const [showFamilyInvite, setShowFamilyInvite] = useState(false);
+  const [showFamilyInvite, setShowFamilyInvite] = useState(null); // family object o null
   const [expandedFamilies, setExpandedFamilies] = useState({});
   const [inviteMenuOpen, setInviteMenuOpen] = useState(null);
   const [editingFamilyAll, setEditingFamilyAll] = useState(null);
+  const [addMemberToFamily, setAddMemberToFamily] = useState(null); // family object da vista Tutte
 
   const toggleFamilyExpanded = (familyId) => {
     setExpandedFamilies((prev) => ({ ...prev, [familyId]: !prev[familyId] }));
@@ -33,8 +34,6 @@ export default function FamilyTab({ family, members, session, families, activeFa
     onChanged();
   };
 
-  // Per ogni membro: trova le ALTRE famiglie a cui appartiene (con stesso user_id),
-  // escludendo la famiglia corrente in cui è renderizzato.
   const otherFamiliesFor = (member, currentFamilyId) => {
     if (!member.user_id) return [];
     const otherMembershipFamilyIds = members
@@ -163,20 +162,34 @@ export default function FamilyTab({ family, members, session, families, activeFa
               )}
 
               {isExpanded && (
-                <div className="list" style={{ borderTop: '1px solid var(--sm)' }}>
-                  {familyMembers.map((m) => (
-                    <MemberCard
-                      key={m.id}
-                      member={m}
-                      isMe={m.user_id === session.user.id}
-                      isOwner={m.user_id === f.created_by}
-                      otherFamilies={otherFamiliesFor(m, f.id)}
-                      onEdit={() => setEditingMember(m)}
-                      onRemove={() => removeMember(m)}
-                      onInvite={() => setShowFamilyInvite(true)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="list" style={{ borderTop: '1px solid var(--sm)' }}>
+                    {familyMembers.map((m) => (
+                      <MemberCard
+                        key={m.id}
+                        member={m}
+                        isMe={m.user_id === session.user.id}
+                        isOwner={m.user_id === f.created_by}
+                        otherFamilies={otherFamiliesFor(m, f.id)}
+                        onEdit={() => setEditingMember(m)}
+                        onRemove={() => removeMember(m)}
+                        onInvite={() => setShowFamilyInvite(f)}
+                      />
+                    ))}
+                  </div>
+                  {/* Azioni espanse: aggiungi membro + invita link */}
+                  <div style={{
+                    padding: '12px', display: 'flex', flexDirection: 'column', gap: 8,
+                    borderTop: '1px solid var(--sm)', background: '#FBFAF7',
+                  }}>
+                    <button className="btn full secondary" onClick={() => setAddMemberToFamily(f)}>
+                      + Aggiungi membro
+                    </button>
+                    <button className="btn full" onClick={() => setShowFamilyInvite(f)}>
+                      💌 Invita con link
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           );
@@ -204,6 +217,22 @@ export default function FamilyTab({ family, members, session, families, activeFa
             onSaved={() => { setEditingMember(null); onChanged(); }}
           />
         )}
+
+        {addMemberToFamily && (
+          <AddMemberModal
+            familyId={addMemberToFamily.id}
+            onClose={() => setAddMemberToFamily(null)}
+            onCreated={() => { setAddMemberToFamily(null); onChanged(); }}
+          />
+        )}
+
+        {showFamilyInvite && (
+          <FamilyInviteModal
+            family={showFamilyInvite}
+            session={session}
+            onClose={() => setShowFamilyInvite(null)}
+          />
+        )}
       </>
     );
   }
@@ -229,7 +258,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
             otherFamilies={otherFamiliesFor(m, family.id)}
             onEdit={() => setEditingMember(m)}
             onRemove={() => removeMember(m)}
-            onInvite={() => setShowFamilyInvite(true)}
+            onInvite={() => setShowFamilyInvite(family)}
           />
         ))}
       </div>
@@ -238,7 +267,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
         <button className="btn full secondary" onClick={() => setShowAdd(true)}>
           + {t('addmember_h')}
         </button>
-        <button className="btn full" onClick={() => setShowFamilyInvite(true)}>
+        <button className="btn full" onClick={() => setShowFamilyInvite(family)}>
           {t('family_invite_link')}
         </button>
       </div>
@@ -270,9 +299,9 @@ export default function FamilyTab({ family, members, session, families, activeFa
 
       {showFamilyInvite && (
         <FamilyInviteModal
-          family={family}
+          family={showFamilyInvite}
           session={session}
-          onClose={() => setShowFamilyInvite(false)}
+          onClose={() => setShowFamilyInvite(null)}
         />
       )}
     </>
@@ -300,7 +329,6 @@ function MemberCard({ member, isMe, isOwner, otherFamilies = [], onEdit, onRemov
           {member.role || 'membro'}
           {member.user_id ? ' · ✓ ha account' : ' · senza account'}
         </div>
-        {/* Badge cross-famiglia */}
         {otherFamilies.length > 0 && (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
             <span style={{ fontSize: 10, color: 'var(--km)', alignSelf: 'center' }}>Anche in:</span>

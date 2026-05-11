@@ -186,8 +186,9 @@ export default function AgendaTab({ familyId, families, events, tasks = [], memb
       />
 
       {targetFamily && (
-        <div style={{ padding: '4px 16px 12px', display: 'flex', gap: 8, flexDirection: isAll ? 'column' : 'row' }}>
-          {!isAll && (
+        <div style={{ padding: '4px 16px 12px', display: 'flex', gap: 8, flexDirection: 'column' }}>
+          {/* Export singola famiglia visibile sempre se c'è solo 1 famiglia, anche in Tutte */}
+          {(!isAll || families.length === 1) && (
             <button className="btn full secondary" onClick={() => setShowCalendar(true)}>
               📅 {t('family_export_calendar')}
             </button>
@@ -480,11 +481,10 @@ function EventCard({ event, me, family, past, onRemove }) {
 function TaskAsEventCard({ task, family, past, onClick }) {
   const due = new Date(task.due_date + 'T00:00:00');
   const priority = task.priority || (task.urgent ? 'high' : 'normal');
-  const accentColor = priority === 'high' ? 'var(--rd)' : priority === 'medium' ? '#F39C12' : '#F39C12';
+  const accentColor = priority === 'high' ? 'var(--rd)' : '#F39C12';
   return (
     <div className="card" onClick={onClick} style={{
-      opacity: past ? 0.6 : 1,
-      cursor: 'pointer',
+      opacity: past ? 0.6 : 1, cursor: 'pointer',
       borderLeft: `4px solid ${accentColor}`,
       background: priority === 'high' ? 'var(--rd)11' : '#F39C1211',
     }}>
@@ -493,12 +493,8 @@ function TaskAsEventCard({ task, family, past, onClick }) {
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase' }}>
             {due.toLocaleDateString(undefined, { month: 'short' })}
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--k)' }}>
-            {due.getDate()}
-          </div>
-          <div style={{ fontSize: 11, color: '#F39C12', fontWeight: 700 }}>
-            📋
-          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--k)' }}>{due.getDate()}</div>
+          <div style={{ fontSize: 11, color: '#F39C12', fontWeight: 700 }}>📋</div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
