@@ -229,8 +229,27 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
                 style={{ fontSize: 13, padding: '10px 12px', marginTop: 8 }}
                 onClick={() => notificationControl.requestPermission?.()}
               >
-                Abilita notifiche
+                🔔 Abilita notifiche
               </button>
+            )}
+            {notificationControl.notificationPermission === 'denied' && (
+              <div style={{ marginTop: 12 }}>
+                <button
+                  className="btn full secondary"
+                  style={{ fontSize: 13, padding: '10px 12px', marginBottom: 10 }}
+                  onClick={() => notificationControl.requestPermission?.()}
+                >
+                  🔁 Riprova abilitazione
+                </button>
+                <div style={{ fontSize: 12, color: 'var(--km)', lineHeight: 1.5, padding: 10, background: 'var(--rdB)', borderRadius: 8, border: '1px solid var(--rd)' }}>
+                  <strong style={{ color: 'var(--rd)' }}>⚠️ iOS ha negato le notifiche</strong><br/>
+                  Se sei su iPhone:<br/>
+                  1. <strong>Impostazioni</strong> → <strong>Notifiche</strong> → scorri fino a <strong>FAMMY</strong><br/>
+                  2. Attiva <strong>"Consenti notifiche"</strong><br/>
+                  3. Torna qui e ricarica l'app<br/><br/>
+                  <em>Se FAMMY non c'è nella lista:</em> rimuovi l'app dalla Home, vai su Safari → fammy-flame.vercel.app → Condividi → "Aggiungi alla schermata Home". Apri dalla Home e accetta il prompt.
+                </div>
+              </div>
             )}
           </div>
 
