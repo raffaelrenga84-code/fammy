@@ -5,6 +5,7 @@ import { I18nProvider, detectBrowserLang } from './lib/i18n.jsx';
 import { applyTheme, getCurrentTheme } from './screens/sub/ThemeScreen.jsx';
 import { applyA11ySettings } from './screens/sub/AccessibilityScreen.jsx';
 import { useGoogleAvatar } from './lib/useGoogleAvatar.js';
+import { usePushSubscription } from './lib/usePushSubscription.js';
 import LoginScreen from './screens/LoginScreen.jsx';
 import WelcomeScreen from './screens/WelcomeScreen.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
@@ -27,22 +28,19 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [inviteToken, setInviteToken] = useState(getInviteToken());
 
-  // Salva automaticamente l'avatar da Google al primo login
+  // Salva avatar Google + registra Push subscription
   useGoogleAvatar(session, profile);
+  usePushSubscription(session);
 
   useEffect(() => {
-    // Prova prima a ripristinare la sessione da localStorage (iOS PWA)
     const savedSession = localStorage.getItem('fammy_session');
     if (savedSession) {
       try {
         const session = JSON.parse(savedSession);
         setSession(session);
-      } catch (e) {
-        // localStorage corrotto, ignora
-      }
+      } catch (e) {}
     }
 
-    // Poi sincronizza con Supabase
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data.session) {
@@ -51,7 +49,6 @@ export default function App() {
       setLoading(false);
     });
 
-    // Ascolta i cambiamenti di auth
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       if (s) {
@@ -84,7 +81,6 @@ export default function App() {
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
-  // Lingua: profilo se loggato, altrimenti browser
   const lang = profile?.language || detectBrowserLang();
 
   let content;

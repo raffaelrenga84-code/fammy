@@ -69,18 +69,21 @@ self.addEventListener('notificationclick', event => {
     return;
   }
 
+  const targetUrl = '/';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clientList => {
-        // Se c'è già una finestra aperta, portala in primo piano
+        // Cerca una finestra FAMMY già aperta
         for (const client of clientList) {
-          if (client.url === '/' && 'focus' in client) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            client.postMessage({ type: 'NOTIFICATION_CLICK', data: event.notification.data || {} });
             return client.focus();
           }
         }
-        // Altrimenti apri una nuova finestra
+        // Altrimenti apri nuova finestra
         if (clients.openWindow) {
-          return clients.openWindow('/');
+          return clients.openWindow(targetUrl);
         }
       })
   );
