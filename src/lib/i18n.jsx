@@ -28,18 +28,6 @@ export const T = {
     attach_photo_optional: 'Allega foto (opzionale)', take_or_attach_photo: '📷 Scatta o allega Foto',
     split_hint_empty: '💡 Se non selezioni nessuno, questa spesa rimarrà solo nel tuo promemoria personale.',
     expense_for_task: 'Spesa per incarico',
-    copy_btn: 'Copia',
-    has_account: '✓ ha account', no_account: 'senza account',
-    also_in: 'Anche in:', member_one_label: 'membro', member_many_label: 'membri',
-    add_member: '+ Aggiungi membro', invite_with_link: '💌 Invita con link',
-    invite_people_to: 'Invita persone a {name}',
-    invite_share_hint: 'Condividi questo link con chi vuoi aggiungere alla famiglia. Quando lo apriranno, entreranno automaticamente.',
-    invite_link_label: '🔗 Link di invito:',
-    invites_pending: '⏳ Inviti in sospeso ({n})',
-    invite_generic: 'Invito generico', expires_in: 'Scade tra {n} {unit}',
-    day_one: 'giorno', day_many: 'giorni',
-    regenerate_new_link: '🔄 Rigenerà nuovo link',
-    expires_after_hint: 'ℹ️ Il link scade dopo 14 giorni. Se necessario, puoi rigenerare un nuovo link.',
     n_selected: '{n}/{m} selezionati',
     attach_photo: 'Allega foto', optional_label: 'opzionale',
 
@@ -272,6 +260,37 @@ export const T = {
     pwa_banner_hint_ios: 'Tocca Condividi → Aggiungi alla schermata Home per accedervi velocemente',
     pwa_banner_hint_android: 'Tocca il menu ⋮ → Installa app per un accesso più rapido',
     pwa_banner_dismiss: 'Ho capito',
+
+    // FamilyTab + Invite (i18n)
+    copy_btn: 'Copia',
+    has_account: '✓ ha account', no_account: 'senza account',
+    also_in: 'Anche in:', member_one_label: 'membro', member_many_label: 'membri',
+    add_member: '+ Aggiungi membro', invite_with_link: '💌 Invita con link',
+    invite_people_to: 'Invita persone a {name}',
+    invite_share_hint: 'Condividi questo link con chi vuoi aggiungere alla famiglia. Quando lo apriranno, entreranno automaticamente.',
+    invite_link_label: '🔗 Link di invito:',
+    invites_pending: '⏳ Inviti in sospeso ({n})',
+    invite_generic: 'Invito generico', expires_in: 'Scade tra {n} {unit}',
+    day_one: 'giorno', day_many: 'giorni',
+    regenerate_new_link: '🔄 Rigenera nuovo link',
+    expires_after_hint: 'ℹ️ Il link scade dopo 14 giorni. Se necessario, puoi rigenerare un nuovo link.',
+
+    // Profile - birthday
+    birthday: 'Compleanno', not_set: 'Non impostato',
+
+    // Push notifications
+    notifications_push_h: '🔔 Notifiche Push',
+    notif_perm_status: 'Stato permessi:',
+    notif_enabled: '✓ Abilitate', notif_not_enabled: '⚠ Non abilitate',
+    notif_enable_btn: '🔔 Abilita notifiche',
+    notif_retry_btn: '🔁 Riprova abilitazione',
+    notif_ios_denied_block: '<strong style="color: var(--rd)">⚠️ iOS ha negato le notifiche</strong><br/>Se sei su iPhone:<br/>1. <strong>Impostazioni</strong> → <strong>Notifiche</strong> → scorri fino a <strong>FAMMY</strong><br/>2. Attiva <strong>"Consenti notifiche"</strong><br/>3. Torna qui e ricarica l\'app<br/><br/><em>Se FAMMY non c\'è nella lista:</em> rimuovi l\'app dalla Home, vai su Safari → fammy-flame.vercel.app → Condividi → "Aggiungi alla schermata Home". Apri dalla Home e accetta il prompt.',
+    notif_info_30min: '📌 <strong>30 minuti prima</strong> dei tuoi eventi',
+    notif_info_immediate: '✨ <strong>Subito</strong> quando altri creano eventi',
+    notif_active: '🔔 Notifiche attive', notif_inactive: '🔕 Notifiche disattivate',
+    notif_active_sub: 'Riceverai avvisi per i tuoi eventi',
+    notif_inactive_sub: 'Non riceverai alcuna notifica',
+    notif_deactivate: 'Disattiva', notif_activate: 'Attiva',
   },
 
   en: {
@@ -286,18 +305,6 @@ export const T = {
     attach_photo_optional: 'Attach photo (optional)', take_or_attach_photo: '📷 Take or attach photo',
     split_hint_empty: '💡 If you select no one, this expense stays in your personal log only.',
     expense_for_task: 'Expense for task',
-    copy_btn: 'Copy',
-    has_account: '✓ has account', no_account: 'no account',
-    also_in: 'Also in:', member_one_label: 'member', member_many_label: 'members',
-    add_member: '+ Add member', invite_with_link: '💌 Invite with link',
-    invite_people_to: 'Invite people to {name}',
-    invite_share_hint: 'Share this link with anyone you want to add to the family. When they open it, they will join automatically.',
-    invite_link_label: '🔗 Invite link:',
-    invites_pending: '⏳ Pending invites ({n})',
-    invite_generic: 'Generic invite', expires_in: 'Expires in {n} {unit}',
-    day_one: 'day', day_many: 'days',
-    regenerate_new_link: '🔄 Regenerate new link',
-    expires_after_hint: 'ℹ️ The link expires after 14 days. If needed, you can regenerate a new link.',
     n_selected: '{n}/{m} selected',
     attach_photo: 'Attach photo', optional_label: 'optional',
 
@@ -511,6 +518,37 @@ export const T = {
     pwa_banner_hint_ios: 'Tap Share → Add to Home Screen for quick access',
     pwa_banner_hint_android: 'Tap the menu ⋮ → Install app for faster access',
     pwa_banner_dismiss: 'Got it',
+
+    // FamilyTab + Invite (i18n)
+    copy_btn: 'Copy',
+    has_account: '✓ has account', no_account: 'no account',
+    also_in: 'Also in:', member_one_label: 'member', member_many_label: 'members',
+    add_member: '+ Add member', invite_with_link: '💌 Invite with link',
+    invite_people_to: 'Invite people to {name}',
+    invite_share_hint: 'Share this link with anyone you want to add to the family. When they open it, they will join automatically.',
+    invite_link_label: '🔗 Invite link:',
+    invites_pending: '⏳ Pending invites ({n})',
+    invite_generic: 'Generic invite', expires_in: 'Expires in {n} {unit}',
+    day_one: 'day', day_many: 'days',
+    regenerate_new_link: '🔄 Regenerate new link',
+    expires_after_hint: 'ℹ️ The link expires after 14 days. If needed, you can regenerate a new link.',
+
+    // Profile - birthday
+    birthday: 'Birthday', not_set: 'Not set',
+
+    // Push notifications
+    notifications_push_h: '🔔 Push Notifications',
+    notif_perm_status: 'Permission status:',
+    notif_enabled: '✓ Enabled', notif_not_enabled: '⚠ Not enabled',
+    notif_enable_btn: '🔔 Enable notifications',
+    notif_retry_btn: '🔁 Retry enabling',
+    notif_ios_denied_block: '<strong style="color: var(--rd)">⚠️ iOS denied notifications</strong><br/>If you\'re on iPhone:<br/>1. <strong>Settings</strong> → <strong>Notifications</strong> → scroll to <strong>FAMMY</strong><br/>2. Turn on <strong>"Allow Notifications"</strong><br/>3. Come back here and reload the app<br/><br/><em>If FAMMY isn\'t in the list:</em> remove the app from the Home screen, go to Safari → fammy-flame.vercel.app → Share → "Add to Home Screen". Open it from the Home screen and accept the prompt.',
+    notif_info_30min: '📌 <strong>30 minutes before</strong> your events',
+    notif_info_immediate: '✨ <strong>Right away</strong> when others create events',
+    notif_active: '🔔 Notifications on', notif_inactive: '🔕 Notifications off',
+    notif_active_sub: 'You\'ll get alerts for your events',
+    notif_inactive_sub: 'You won\'t receive any notifications',
+    notif_deactivate: 'Turn off', notif_activate: 'Turn on',
   },
 
   fr: {
@@ -525,18 +563,6 @@ export const T = {
     attach_photo_optional: 'Joindre photo (optionnelle)', take_or_attach_photo: '📷 Prendre ou joindre photo',
     split_hint_empty: '💡 Si tu ne sélectionnes personne, cette dépense reste dans ton pense-bête personnel.',
     expense_for_task: 'Dépense pour tâche',
-    copy_btn: 'Copier',
-    has_account: '✓ a un compte', no_account: 'sans compte',
-    also_in: 'Aussi dans:', member_one_label: 'membre', member_many_label: 'membres',
-    add_member: '+ Ajouter membre', invite_with_link: '💌 Inviter avec lien',
-    invite_people_to: 'Inviter des personnes à {name}',
-    invite_share_hint: 'Partage ce lien avec les personnes que tu veux ajouter à la famille. Quand elles l\'ouvriront, elles rejoindront automatiquement.',
-    invite_link_label: '🔗 Lien d\'invitation:',
-    invites_pending: '⏳ Invitations en attente ({n})',
-    invite_generic: 'Invitation générique', expires_in: 'Expire dans {n} {unit}',
-    day_one: 'jour', day_many: 'jours',
-    regenerate_new_link: '🔄 Régénérer un nouveau lien',
-    expires_after_hint: 'ℹ️ Le lien expire après 14 jours. Si nécessaire, tu peux régénérer un nouveau lien.',
     n_selected: '{n}/{m} sélectionnés',
     attach_photo: 'Joindre photo', optional_label: 'optionnelle',
 
@@ -793,6 +819,37 @@ export const T = {
     pwa_banner_hint_ios: 'Appuie sur Partager → Ajouter à l\'écran d\'accueil pour un accès rapide',
     pwa_banner_hint_android: 'Appuie sur le menu ⋮ → Installer l\'appli pour un accès plus rapide',
     pwa_banner_dismiss: 'Compris',
+
+    // FamilyTab + Invite (i18n)
+    copy_btn: 'Copier',
+    has_account: '✓ a un compte', no_account: 'sans compte',
+    also_in: 'Aussi dans:', member_one_label: 'membre', member_many_label: 'membres',
+    add_member: '+ Ajouter membre', invite_with_link: '💌 Inviter avec lien',
+    invite_people_to: 'Inviter des personnes à {name}',
+    invite_share_hint: 'Partage ce lien avec les personnes que tu veux ajouter à la famille. Quand elles l\'ouvriront, elles rejoindront automatiquement.',
+    invite_link_label: '🔗 Lien d\'invitation:',
+    invites_pending: '⏳ Invitations en attente ({n})',
+    invite_generic: 'Invitation générique', expires_in: 'Expire dans {n} {unit}',
+    day_one: 'jour', day_many: 'jours',
+    regenerate_new_link: '🔄 Régénérer un nouveau lien',
+    expires_after_hint: 'ℹ️ Le lien expire après 14 jours. Si nécessaire, tu peux régénérer un nouveau lien.',
+
+    // Profile - birthday
+    birthday: 'Anniversaire', not_set: 'Non défini',
+
+    // Push notifications
+    notifications_push_h: '🔔 Notifications Push',
+    notif_perm_status: 'Statut des autorisations :',
+    notif_enabled: '✓ Activées', notif_not_enabled: '⚠ Non activées',
+    notif_enable_btn: '🔔 Activer les notifications',
+    notif_retry_btn: '🔁 Réessayer l\'activation',
+    notif_ios_denied_block: '<strong style="color: var(--rd)">⚠️ iOS a refusé les notifications</strong><br/>Si tu es sur iPhone :<br/>1. <strong>Réglages</strong> → <strong>Notifications</strong> → fais défiler jusqu\'à <strong>FAMMY</strong><br/>2. Active <strong>"Autoriser les notifications"</strong><br/>3. Reviens ici et recharge l\'appli<br/><br/><em>Si FAMMY n\'est pas dans la liste :</em> retire l\'appli de l\'écran d\'accueil, va sur Safari → fammy-flame.vercel.app → Partager → "Sur l\'écran d\'accueil". Ouvre depuis l\'écran d\'accueil et accepte la demande.',
+    notif_info_30min: '📌 <strong>30 minutes avant</strong> tes événements',
+    notif_info_immediate: '✨ <strong>Immédiatement</strong> quand d\'autres créent des événements',
+    notif_active: '🔔 Notifications activées', notif_inactive: '🔕 Notifications désactivées',
+    notif_active_sub: 'Tu recevras des alertes pour tes événements',
+    notif_inactive_sub: 'Tu ne recevras aucune notification',
+    notif_deactivate: 'Désactiver', notif_activate: 'Activer',
   },
 
   de: {
@@ -807,18 +864,6 @@ export const T = {
     attach_photo_optional: 'Foto anhängen (optional)', take_or_attach_photo: '📷 Foto aufnehmen oder anhängen',
     split_hint_empty: '💡 Wenn du niemanden auswählst, bleibt diese Ausgabe nur in deinem persönlichen Verzeichnis.',
     expense_for_task: 'Ausgabe für Aufgabe',
-    copy_btn: 'Kopieren',
-    has_account: '✓ hat Konto', no_account: 'ohne Konto',
-    also_in: 'Auch in:', member_one_label: 'Mitglied', member_many_label: 'Mitglieder',
-    add_member: '+ Mitglied hinzufügen', invite_with_link: '💌 Mit Link einladen',
-    invite_people_to: 'Personen zu {name} einladen',
-    invite_share_hint: 'Teile diesen Link mit denen, die du zur Familie hinzufügen möchtest. Wenn sie ihn öffnen, treten sie automatisch bei.',
-    invite_link_label: '🔗 Einladungslink:',
-    invites_pending: '⏳ Ausstehende Einladungen ({n})',
-    invite_generic: 'Allgemeine Einladung', expires_in: 'Läuft ab in {n} {unit}',
-    day_one: 'Tag', day_many: 'Tagen',
-    regenerate_new_link: '🔄 Neuen Link generieren',
-    expires_after_hint: 'ℹ️ Der Link läuft nach 14 Tagen ab. Bei Bedarf kannst du einen neuen Link generieren.',
     n_selected: '{n}/{m} ausgewählt',
     attach_photo: 'Foto anhängen', optional_label: 'optional',
 
@@ -1066,6 +1111,37 @@ export const T = {
     pwa_banner_hint_ios: 'Tippe Teilen → Zum Startbildschirm hinzufügen für schnellen Zugriff',
     pwa_banner_hint_android: 'Tippe das Menü ⋮ → App installieren für schnelleren Zugriff',
     pwa_banner_dismiss: 'Verstanden',
+
+    // FamilyTab + Invite (i18n)
+    copy_btn: 'Kopieren',
+    has_account: '✓ hat Konto', no_account: 'ohne Konto',
+    also_in: 'Auch in:', member_one_label: 'Mitglied', member_many_label: 'Mitglieder',
+    add_member: '+ Mitglied hinzufügen', invite_with_link: '💌 Mit Link einladen',
+    invite_people_to: 'Personen zu {name} einladen',
+    invite_share_hint: 'Teile diesen Link mit jedem, den du zur Familie hinzufügen möchtest. Beim Öffnen tritt er automatisch bei.',
+    invite_link_label: '🔗 Einladungslink:',
+    invites_pending: '⏳ Ausstehende Einladungen ({n})',
+    invite_generic: 'Allgemeine Einladung', expires_in: 'Läuft ab in {n} {unit}',
+    day_one: 'Tag', day_many: 'Tagen',
+    regenerate_new_link: '🔄 Neuen Link generieren',
+    expires_after_hint: 'ℹ️ Der Link läuft nach 14 Tagen ab. Bei Bedarf kannst du einen neuen Link generieren.',
+
+    // Profile - birthday
+    birthday: 'Geburtstag', not_set: 'Nicht festgelegt',
+
+    // Push notifications
+    notifications_push_h: '🔔 Push-Benachrichtigungen',
+    notif_perm_status: 'Berechtigungsstatus:',
+    notif_enabled: '✓ Aktiviert', notif_not_enabled: '⚠ Nicht aktiviert',
+    notif_enable_btn: '🔔 Benachrichtigungen aktivieren',
+    notif_retry_btn: '🔁 Erneut versuchen',
+    notif_ios_denied_block: '<strong style="color: var(--rd)">⚠️ iOS hat Benachrichtigungen abgelehnt</strong><br/>Wenn du auf dem iPhone bist:<br/>1. <strong>Einstellungen</strong> → <strong>Mitteilungen</strong> → scrolle zu <strong>FAMMY</strong><br/>2. Aktiviere <strong>"Mitteilungen erlauben"</strong><br/>3. Komm hierher zurück und lade die App neu<br/><br/><em>Wenn FAMMY nicht in der Liste ist:</em> entferne die App vom Home-Bildschirm, gehe zu Safari → fammy-flame.vercel.app → Teilen → "Zum Home-Bildschirm". Öffne sie vom Home-Bildschirm und akzeptiere die Aufforderung.',
+    notif_info_30min: '📌 <strong>30 Minuten vorher</strong> bei deinen Terminen',
+    notif_info_immediate: '✨ <strong>Sofort</strong> wenn andere Termine erstellen',
+    notif_active: '🔔 Benachrichtigungen an', notif_inactive: '🔕 Benachrichtigungen aus',
+    notif_active_sub: 'Du erhältst Benachrichtigungen für deine Termine',
+    notif_inactive_sub: 'Du erhältst keine Benachrichtigungen',
+    notif_deactivate: 'Deaktivieren', notif_activate: 'Aktivieren',
   },
 };
 
@@ -1094,4 +1170,26 @@ export function detectBrowserLang() {
 
 export const I18nContext = createContext({ lang: 'it', setLang: () => {}, t: (k) => k });
 
-ex
+export function I18nProvider({ initialLang = 'it', children }) {
+  const [lang, setLang] = useState(initialLang);
+
+  useEffect(() => {
+    setLang(initialLang);
+  }, [initialLang]);
+
+  const t = (key, vars = {}) => {
+    let str = (T[lang] && T[lang][key]) || T.it[key] || key;
+    Object.keys(vars).forEach((v) => { str = str.replace(`{${v}}`, vars[v]); });
+    return str;
+  };
+
+  return (
+    <I18nContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+
+export function useT() {
+  return useContext(I18nContext);
+}

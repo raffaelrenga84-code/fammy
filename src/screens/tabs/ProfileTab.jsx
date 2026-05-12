@@ -149,13 +149,13 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
       <div className="profile-section">
         <div className="profile-row">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="profile-label">🎂 {t('birthday') || 'Compleanno'}</div>
+            <div className="profile-label">🎂 {t('birthday')}</div>
             {editingBirthday ? (
               <input type="date" className="input" autoFocus
                 value={birthday} onChange={(e) => setBirthday(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') saveBirthday(); if (e.key === 'Escape') { setBirthday(profile?.birthday || ''); setEditingBirthday(false); } }} />
             ) : (
-              <div className="profile-value">{birthday ? new Date(birthday).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : t('not_set') || 'Non impostato'}</div>
+              <div className="profile-value">{birthday ? new Date(birthday).toLocaleDateString(lang === 'it' ? 'it-IT' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : t('not_set')}</div>
             )}
           </div>
           {editingBirthday ? (
@@ -200,7 +200,7 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
 
       {/* Notifiche Push */}
       <div className="profile-section">
-        <div className="profile-label" style={{ marginBottom: 12 }}>🔔 Notifiche Push</div>
+        <div className="profile-label" style={{ marginBottom: 12 }}>{t('notifications_push_h')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Status attuale */}
           <div style={{
@@ -211,7 +211,7 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
             fontSize: 13,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontWeight: 600 }}>Stato permessi:</span>
+              <span style={{ fontWeight: 600 }}>{t('notif_perm_status')}</span>
               <span style={{
                 padding: '2px 8px',
                 borderRadius: 100,
@@ -220,7 +220,7 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
                 background: notificationControl.notificationPermission === 'granted' ? 'var(--gnB)' : 'var(--rdB)',
                 color: notificationControl.notificationPermission === 'granted' ? 'var(--gn)' : 'var(--rd)',
               }}>
-                {notificationControl.notificationPermission === 'granted' ? '✓ Abilitate' : '⚠ Non abilitate'}
+                {notificationControl.notificationPermission === 'granted' ? t('notif_enabled') : t('notif_not_enabled')}
               </span>
             </div>
             {notificationControl.notificationPermission === 'default' && (
@@ -229,7 +229,7 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
                 style={{ fontSize: 13, padding: '10px 12px', marginTop: 8 }}
                 onClick={() => notificationControl.requestPermission?.()}
               >
-                🔔 Abilita notifiche
+                {t('notif_enable_btn')}
               </button>
             )}
             {notificationControl.notificationPermission === 'denied' && (
@@ -239,16 +239,12 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
                   style={{ fontSize: 13, padding: '10px 12px', marginBottom: 10 }}
                   onClick={() => notificationControl.requestPermission?.()}
                 >
-                  🔁 Riprova abilitazione
+                  {t('notif_retry_btn')}
                 </button>
-                <div style={{ fontSize: 12, color: 'var(--km)', lineHeight: 1.5, padding: 10, background: 'var(--rdB)', borderRadius: 8, border: '1px solid var(--rd)' }}>
-                  <strong style={{ color: 'var(--rd)' }}>⚠️ iOS ha negato le notifiche</strong><br/>
-                  Se sei su iPhone:<br/>
-                  1. <strong>Impostazioni</strong> → <strong>Notifiche</strong> → scorri fino a <strong>FAMMY</strong><br/>
-                  2. Attiva <strong>"Consenti notifiche"</strong><br/>
-                  3. Torna qui e ricarica l'app<br/><br/>
-                  <em>Se FAMMY non c'è nella lista:</em> rimuovi l'app dalla Home, vai su Safari → fammy-flame.vercel.app → Condividi → "Aggiungi alla schermata Home". Apri dalla Home e accetta il prompt.
-                </div>
+                <div
+                  style={{ fontSize: 12, color: 'var(--km)', lineHeight: 1.5, padding: 10, background: 'var(--rdB)', borderRadius: 8, border: '1px solid var(--rd)' }}
+                  dangerouslySetInnerHTML={{ __html: t('notif_ios_denied_block') }}
+                />
               </div>
             )}
           </div>
@@ -262,10 +258,10 @@ export default function ProfileTab({ session, profile, onChanged, notificationCo
           )}
 
           {/* Info */}
-          <p style={{ fontSize: 12, color: 'var(--km)', lineHeight: 1.5 }}>
-            📌 <strong>30 minuti prima</strong> dei tuoi eventi<br/>
-            ✨ <strong>Subito</strong> quando altri creano eventi
-          </p>
+          <p
+            style={{ fontSize: 12, color: 'var(--km)', lineHeight: 1.5 }}
+            dangerouslySetInnerHTML={{ __html: t('notif_info_30min') + '<br/>' + t('notif_info_immediate') }}
+          />
         </div>
       </div>
 
@@ -308,6 +304,7 @@ function SettingRow({ label, onClick, accent }) {
 }
 
 function NotificationToggle({ enabled, onChange }) {
+  const { t } = useT();
   return (
     <div style={{
       padding: 12,
@@ -320,10 +317,10 @@ function NotificationToggle({ enabled, onChange }) {
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--k)', marginBottom: 2 }}>
-          {enabled ? '🔔 Notifiche attive' : '🔕 Notifiche disattivate'}
+          {enabled ? t('notif_active') : t('notif_inactive')}
         </div>
         <div style={{ fontSize: 12, color: 'var(--km)' }}>
-          {enabled ? 'Riceverai avvisi per i tuoi eventi' : 'Non riceverai alcuna notifica'}
+          {enabled ? t('notif_active_sub') : t('notif_inactive_sub')}
         </div>
       </div>
       <button
@@ -339,7 +336,7 @@ function NotificationToggle({ enabled, onChange }) {
           cursor: 'pointer',
         }}
       >
-        {enabled ? 'Disattiva' : 'Attiva'}
+        {enabled ? t('notif_deactivate') : t('notif_activate')}
       </button>
     </div>
   );
