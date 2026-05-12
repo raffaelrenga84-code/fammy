@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
+import { useT } from '../lib/i18n.jsx';
 
 /**
  * Modal unificato per gestire gli inviti di una famiglia
  * Mostra il codice/link di invito e la lista degli inviti pending
  */
 export default function FamilyInviteModal({ family, session, onClose }) {
+  const { t } = useT();
   const [inviteToken, setInviteToken] = useState(null);
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,11 +130,8 @@ export default function FamilyInviteModal({ family, session, onClose }) {
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>🎁 Invita persone a {family.name}</h2>
-        <p className="modal-sub">
-          Condividi questo link con chi vuoi aggiungere alla famiglia.
-          Quando lo apriranno, entreranno automaticamente.
-        </p>
+        <h2>🎁 {t('invite_people_to', { name: family.name })}</h2>
+        <p className="modal-sub">{t('invite_share_hint')}</p>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -145,7 +144,7 @@ export default function FamilyInviteModal({ family, session, onClose }) {
               <>
                 <div style={{ marginBottom: 16, padding: 12, background: 'var(--s)', borderRadius: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k)', marginBottom: 8 }}>
-                    🔗 Link di invito:
+                    {t('invite_link_label')}
                   </div>
                   <div
                     style={{
@@ -171,7 +170,7 @@ export default function FamilyInviteModal({ family, session, onClose }) {
                       onClick={copyToClipboard}
                       style={{ flex: 1 }}
                     >
-                      {copied ? '✓ Copiato!' : '📋 Copia'}
+                      {copied ? '✓' : '📋'} {t('copy_btn')}
                     </button>
                     <button
                       className="btn full secondary"
@@ -199,14 +198,14 @@ export default function FamilyInviteModal({ family, session, onClose }) {
                 {invitations.length > 0 && (
                   <div style={{ marginBottom: 16, padding: 12, background: 'var(--s)', borderRadius: 12 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--k)', marginBottom: 8 }}>
-                      ⏳ Inviti in sospeso ({invitations.length})
+                      {t('invites_pending', { n: invitations.length })}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {invitations.map((inv) => {
                         const daysLeft = Math.ceil(
                           (new Date(inv.expires_at) - new Date()) / (1000 * 60 * 60 * 24)
                         );
-                        const memberName = inv.members?.name || 'Invito generico';
+                        const memberName = inv.members?.name || t('invite_generic');
                         return (
                           <div
                             key={inv.id}
@@ -226,7 +225,7 @@ export default function FamilyInviteModal({ family, session, onClose }) {
                                 {memberName}
                               </div>
                               <div style={{ fontSize: 10, color: 'var(--km)' }}>
-                                Scade tra {daysLeft} {daysLeft === 1 ? 'giorno' : 'giorni'}
+                                {t('expires_in', { n: daysLeft, unit: daysLeft === 1 ? t('day_one') : t('day_many') })}
                               </div>
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--ab)', fontWeight: 600 }}>
@@ -241,7 +240,7 @@ export default function FamilyInviteModal({ family, session, onClose }) {
 
                 {/* Info e rigenera */}
                 <div style={{ marginBottom: 16, padding: 10, background: 'var(--ybB)', borderRadius: 8, fontSize: 11, color: 'var(--yb)' }}>
-                  ℹ️ Il link scade dopo 14 giorni. Se necessario, puoi rigenerare un nuovo link.
+                  {t('expires_after_hint')}
                 </div>
 
                 <button
@@ -250,7 +249,7 @@ export default function FamilyInviteModal({ family, session, onClose }) {
                   disabled={busy}
                   style={{ marginBottom: 12 }}
                 >
-                  {busy ? <span className="spin" /> : '🔄 Rigenerà nuovo link'}
+                  {busy ? <span className="spin" /> : t('regenerate_new_link')}
                 </button>
               </>
             )}
@@ -259,7 +258,7 @@ export default function FamilyInviteModal({ family, session, onClose }) {
 
         <div className="row">
           <button className="btn secondary full" onClick={onClose}>
-            Chiudi
+            {t('close')}
           </button>
         </div>
       </div>

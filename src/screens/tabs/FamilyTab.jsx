@@ -71,7 +71,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{f.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--km)', marginTop: 2 }}>
-                    {familyMembers.length} {familyMembers.length === 1 ? 'membro' : 'membri'}
+                    {familyMembers.length} {familyMembers.length === 1 ? t('member_one_label') : t('member_many_label')}
                   </div>
                 </div>
                 <span style={{
@@ -183,10 +183,10 @@ export default function FamilyTab({ family, members, session, families, activeFa
                     borderTop: '1px solid var(--sm)', background: '#FBFAF7',
                   }}>
                     <button className="btn full secondary" onClick={() => setAddMemberToFamily(f)}>
-                      + Aggiungi membro
+                      {t('add_member')}
                     </button>
                     <button className="btn full" onClick={() => setShowFamilyInvite(f)}>
-                      💌 Invita con link
+                      {t('invite_with_link')}
                     </button>
                   </div>
                 </>
@@ -309,6 +309,7 @@ export default function FamilyTab({ family, members, session, families, activeFa
 }
 
 function MemberCard({ member, isMe, isOwner, otherFamilies = [], onEdit, onRemove, onInvite }) {
+  const { t } = useT();
   const canInvite = !isMe && !member.user_id;
 
   return (
@@ -326,12 +327,12 @@ function MemberCard({ member, isMe, isOwner, otherFamilies = [], onEdit, onRemov
           {isMe && <span style={{ fontSize: 11, color: 'var(--km)', fontWeight: 500 }}>(tu)</span>}
         </div>
         <div style={{ color: 'var(--km)', fontSize: 13 }}>
-          {member.role || 'membro'}
-          {member.user_id ? ' · ✓ ha account' : ' · senza account'}
+          {member.role || t('member_one_label')}
+          {member.user_id ? ' · ' + t('has_account') : ' · ' + t('no_account')}
         </div>
         {otherFamilies.length > 0 && (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-            <span style={{ fontSize: 10, color: 'var(--km)', alignSelf: 'center' }}>Anche in:</span>
+            <span style={{ fontSize: 10, color: 'var(--km)', alignSelf: 'center' }}>{t('also_in')}</span>
             {otherFamilies.map((f) => (
               <span key={f.id} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 3,

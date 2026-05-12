@@ -28,6 +28,18 @@ export const T = {
     attach_photo_optional: 'Allega foto (opzionale)', take_or_attach_photo: '📷 Scatta o allega Foto',
     split_hint_empty: '💡 Se non selezioni nessuno, questa spesa rimarrà solo nel tuo promemoria personale.',
     expense_for_task: 'Spesa per incarico',
+    copy_btn: 'Copia',
+    has_account: '✓ ha account', no_account: 'senza account',
+    also_in: 'Anche in:', member_one_label: 'membro', member_many_label: 'membri',
+    add_member: '+ Aggiungi membro', invite_with_link: '💌 Invita con link',
+    invite_people_to: 'Invita persone a {name}',
+    invite_share_hint: 'Condividi questo link con chi vuoi aggiungere alla famiglia. Quando lo apriranno, entreranno automaticamente.',
+    invite_link_label: '🔗 Link di invito:',
+    invites_pending: '⏳ Inviti in sospeso ({n})',
+    invite_generic: 'Invito generico', expires_in: 'Scade tra {n} {unit}',
+    day_one: 'giorno', day_many: 'giorni',
+    regenerate_new_link: '🔄 Rigenerà nuovo link',
+    expires_after_hint: 'ℹ️ Il link scade dopo 14 giorni. Se necessario, puoi rigenerare un nuovo link.',
     n_selected: '{n}/{m} selezionati',
     attach_photo: 'Allega foto', optional_label: 'opzionale',
 
@@ -274,6 +286,18 @@ export const T = {
     attach_photo_optional: 'Attach photo (optional)', take_or_attach_photo: '📷 Take or attach photo',
     split_hint_empty: '💡 If you select no one, this expense stays in your personal log only.',
     expense_for_task: 'Expense for task',
+    copy_btn: 'Copy',
+    has_account: '✓ has account', no_account: 'no account',
+    also_in: 'Also in:', member_one_label: 'member', member_many_label: 'members',
+    add_member: '+ Add member', invite_with_link: '💌 Invite with link',
+    invite_people_to: 'Invite people to {name}',
+    invite_share_hint: 'Share this link with anyone you want to add to the family. When they open it, they will join automatically.',
+    invite_link_label: '🔗 Invite link:',
+    invites_pending: '⏳ Pending invites ({n})',
+    invite_generic: 'Generic invite', expires_in: 'Expires in {n} {unit}',
+    day_one: 'day', day_many: 'days',
+    regenerate_new_link: '🔄 Regenerate new link',
+    expires_after_hint: 'ℹ️ The link expires after 14 days. If needed, you can regenerate a new link.',
     n_selected: '{n}/{m} selected',
     attach_photo: 'Attach photo', optional_label: 'optional',
 
@@ -501,6 +525,18 @@ export const T = {
     attach_photo_optional: 'Joindre photo (optionnelle)', take_or_attach_photo: '📷 Prendre ou joindre photo',
     split_hint_empty: '💡 Si tu ne sélectionnes personne, cette dépense reste dans ton pense-bête personnel.',
     expense_for_task: 'Dépense pour tâche',
+    copy_btn: 'Copier',
+    has_account: '✓ a un compte', no_account: 'sans compte',
+    also_in: 'Aussi dans:', member_one_label: 'membre', member_many_label: 'membres',
+    add_member: '+ Ajouter membre', invite_with_link: '💌 Inviter avec lien',
+    invite_people_to: 'Inviter des personnes à {name}',
+    invite_share_hint: 'Partage ce lien avec les personnes que tu veux ajouter à la famille. Quand elles l\'ouvriront, elles rejoindront automatiquement.',
+    invite_link_label: '🔗 Lien d\'invitation:',
+    invites_pending: '⏳ Invitations en attente ({n})',
+    invite_generic: 'Invitation générique', expires_in: 'Expire dans {n} {unit}',
+    day_one: 'jour', day_many: 'jours',
+    regenerate_new_link: '🔄 Régénérer un nouveau lien',
+    expires_after_hint: 'ℹ️ Le lien expire après 14 jours. Si nécessaire, tu peux régénérer un nouveau lien.',
     n_selected: '{n}/{m} sélectionnés',
     attach_photo: 'Joindre photo', optional_label: 'optionnelle',
 
@@ -771,6 +807,18 @@ export const T = {
     attach_photo_optional: 'Foto anhängen (optional)', take_or_attach_photo: '📷 Foto aufnehmen oder anhängen',
     split_hint_empty: '💡 Wenn du niemanden auswählst, bleibt diese Ausgabe nur in deinem persönlichen Verzeichnis.',
     expense_for_task: 'Ausgabe für Aufgabe',
+    copy_btn: 'Kopieren',
+    has_account: '✓ hat Konto', no_account: 'ohne Konto',
+    also_in: 'Auch in:', member_one_label: 'Mitglied', member_many_label: 'Mitglieder',
+    add_member: '+ Mitglied hinzufügen', invite_with_link: '💌 Mit Link einladen',
+    invite_people_to: 'Personen zu {name} einladen',
+    invite_share_hint: 'Teile diesen Link mit denen, die du zur Familie hinzufügen möchtest. Wenn sie ihn öffnen, treten sie automatisch bei.',
+    invite_link_label: '🔗 Einladungslink:',
+    invites_pending: '⏳ Ausstehende Einladungen ({n})',
+    invite_generic: 'Allgemeine Einladung', expires_in: 'Läuft ab in {n} {unit}',
+    day_one: 'Tag', day_many: 'Tagen',
+    regenerate_new_link: '🔄 Neuen Link generieren',
+    expires_after_hint: 'ℹ️ Der Link läuft nach 14 Tagen ab. Bei Bedarf kannst du einen neuen Link generieren.',
     n_selected: '{n}/{m} ausgewählt',
     attach_photo: 'Foto anhängen', optional_label: 'optional',
 
@@ -1046,26 +1094,4 @@ export function detectBrowserLang() {
 
 export const I18nContext = createContext({ lang: 'it', setLang: () => {}, t: (k) => k });
 
-export function I18nProvider({ initialLang = 'it', children }) {
-  const [lang, setLang] = useState(initialLang);
-
-  useEffect(() => {
-    setLang(initialLang);
-  }, [initialLang]);
-
-  const t = (key, vars = {}) => {
-    let str = (T[lang] && T[lang][key]) || T.it[key] || key;
-    Object.keys(vars).forEach((v) => { str = str.replace(`{${v}}`, vars[v]); });
-    return str;
-  };
-
-  return (
-    <I18nContext.Provider value={{ lang, setLang, t }}>
-      {children}
-    </I18nContext.Provider>
-  );
-}
-
-export function useT() {
-  return useContext(I18nContext);
-}
+ex
