@@ -8,8 +8,6 @@ export default function LoginScreen() {
 
   const loginWithProvider = async (provider) => {
     setErrorMsg('');
-    // Solo scope di base (email + profile) per evitare la verifica Google.
-    // Il compleanno l'utente lo inserisce a mano nel profilo.
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: window.location.origin },
@@ -42,23 +40,25 @@ export default function LoginScreen() {
           <span>{t('login_with_google')}</span>
         </button>
 
-        {/* Bottone Apple — disabilitato finché non configuriamo Apple Developer + Supabase Apple provider.
-            Una volta pronto: rimuovi disabled, cambia il style/tooltip, e il click chiamerà loginWithProvider('apple'). */}
-        <button
-          type="button"
-          className="oauth-btn"
-          disabled
-          title={t('login_apple_coming_soon')}
-          style={{
-            padding: '12px 16px', fontSize: 14,
-            background: '#000', color: '#fff',
-            border: '1px solid #000',
-            opacity: 0.5, cursor: 'not-allowed',
-            position: 'relative',
-          }}
-        >
-          <AppleIcon />
-          <span>{t('login_with_apple')}</span>
+        {/* Bottone Apple — disabilitato finché non configuriamo Apple Developer + Supabase provider.
+            Quando pronto: togliere disabled, cambiare opacity, e onClick={() => loginWithProvider('apple')} */}
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="oauth-btn"
+            disabled
+            title={t('login_apple_coming_soon')}
+            style={{
+              padding: '12px 16px', fontSize: 14,
+              background: '#000', color: '#fff',
+              border: '1px solid #000',
+              opacity: 0.5, cursor: 'not-allowed',
+              width: '100%',
+            }}
+          >
+            <AppleIcon />
+            <span>{t('login_with_apple')}</span>
+          </button>
           <span style={{
             position: 'absolute', top: -8, right: -4,
             background: 'var(--am)', color: 'var(--k)',
@@ -66,7 +66,7 @@ export default function LoginScreen() {
             padding: '2px 6px', borderRadius: 100,
             border: '1.5px solid white',
           }}>{t('soon_badge')}</span>
-        </button>
+        </div>
       </div>
 
       {errorMsg && <div className="login-msg error" style={{ marginTop: 12 }}>{errorMsg}</div>}
