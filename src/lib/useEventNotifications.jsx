@@ -13,11 +13,23 @@ const NOTIFICATIONS_ENABLED_KEY = 'fammy_notifications_enabled';
  *  - notifica il giorno prima dei compleanni
  *  - realtime subscriptions per refresh automatico
  */
+// Safe accessor: in alcune webview iOS / in-app browser, 'Notification' non
+// esiste come identifier globale -> l'optional chaining NON salva da ReferenceError.
+// 'typeof X !== "undefined"' e' l'unico controllo sicuro.
+function safeNotificationPermission() {
+  try {
+    if (typeof Notification === 'undefined') return 'default';
+    return Notification.permission || 'default';
+  } catch (e) { return 'default'; }
+}
+
 export function useEventNotifications(session, profile, families, events, taskAssignees, members = [], onDataChange) {
-  const [notificationPermission, setNotificationPermission] = useState(Notification?.permission || 'default');
+  const [notificationPermission, setNotificationPermission] = useState(safeNotificationPermission());
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    const saved = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
-    return saved === null ? true : saved === 'true';
+    try {
+      const saved = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
+      return saved === null ? true : saved === 'true';
+    } catch (e) { return true; }
   });
   const scheduledNotificationsRef = useRef(new Map());
 
@@ -31,9 +43,12 @@ export function useEventNotifications(session, profile, families, events, taskAs
 
   // Richiedi permessi notifica al primo accesso
   useEffect(() => {
-    if (Notification?.permission === 'default' && session?.user?.id) {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission === 'default' && session?.user?.id) {
       setTimeout(() => {
-        Notification.requestPermission().then((perm) => setNotificationPermission(perm));
+        try {
+          try { Notification.requestPermission().then((perm) => setNotificationPermission(perm)); } catch (e) {}
+        } catch (e) { /* webview senza supporto */ }
       }, 3000);
     }
   }, [session?.user?.id]);
@@ -212,7 +227,7 @@ export function useEventNotifications(session, profile, families, events, taskAs
     notificationsEnabled,
     requestPermission: () => {
       if (Notification?.permission === 'default') {
-        Notification.requestPermission().then((perm) => setNotificationPermission(perm));
+        try { Notification.requestPermission().then((perm) => setNotificationPermission(perm)); } catch (e) {}
       }
     },
     setNotificationsEnabled: (enabled) => {
@@ -223,7 +238,7 @@ export function useEventNotifications(session, profile, families, events, taskAs
 }
 
 function showEventNotification(event) {
-  if (!('Notification' in window)) return;
+  if (typeof Notification === 'undefined' || !('Notification' in window)) return;
   const startTime = new Date(event.starts_at);
   const timeStr = startTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   const notification = new Notification(`📅 ${event.title}`, {
@@ -235,7 +250,7 @@ function showEventNotification(event) {
 }
 
 function showNewEventNotification(event, family) {
-  if (!('Notification' in window)) return;
+  if (typeof Notification === 'undefined' || !('Notification' in window)) return;
   const startTime = new Date(event.starts_at);
   const dateStr = startTime.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   const notification = new Notification(`✨ Nuovo evento in ${family?.name || 'Famiglia'}`, {
@@ -247,7 +262,7 @@ function showNewEventNotification(event, family) {
 }
 
 function showNewTaskNotification(task, family) {
-  if (!('Notification' in window)) return;
+  if (typeof Notification === 'undefined' || !('Notification' in window)) return;
   const notification = new Notification(`📋 Nuovo incarico in ${family?.name || 'Famiglia'}`, {
     body: task.title || 'Apri FAMMY per vederlo',
     icon: '/icon.png', badge: '/icon.png',
@@ -257,7 +272,7 @@ function showNewTaskNotification(task, family) {
 }
 
 function showUrgentTaskNotification(task, family) {
-  if (!('Notification' in window)) return;
+  if (typeof Notification === 'undefined' || !('Notification' in window)) return;
   const notification = new Notification(`🚨 Incarico urgente in ${family?.name || 'Famiglia'}`, {
     body: `${task.title} ha bisogno di attenzione`,
     icon: '/icon.png', badge: '/icon.png',
@@ -267,7 +282,7 @@ function showUrgentTaskNotification(task, family) {
 }
 
 function showDelegatedTaskNotification(task, family) {
-  if (!('Notification' in window)) return;
+  if (typeof Notification === 'undefined' || !('Notification' in window)) return;
   const notification = new Notification(`🧡 Lo fai tu?`, {
     body: `Ti hanno chiesto di occuparti di: ${task.title}`,
     icon: '/icon.png', badge: '/icon.png',
@@ -277,7 +292,7 @@ function showDelegatedTaskNotification(task, family) {
 }
 
 function showBirthdayNotification(member) {
-  if (!('Notification' in window)) return;
+  if (typeof Notification === 'undefined' || !('Notification' in window)) return;
   const notification = new Notification(`🎂 Compleanno domani!`, {
     body: `È il compleanno di ${member.name}! 🎉`,
     icon: '/icon.png', badge: '/icon.png',

@@ -27,6 +27,10 @@ export default function App() {
   const [families, setFamilies] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [inviteToken, setInviteToken] = useState(getInviteToken());
+  // dataLoaded: true quando abbiamo gia' fatto almeno una fetch di profile+families
+  // dopo aver ricevuto la session. Evita il "flash" di WelcomeScreen per utenti
+  // esistenti mentre families e' ancora in caricamento.
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Salva avatar Google + registra Push subscription
   useGoogleAvatar(session, profile);
@@ -61,20 +65,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setProfile(null); setFamilies([]); return; }
+    if (!session) { setProfile(null); setFamilies([]); setDataLoaded(false); return; }
     let cancelled = false;
     (async () => {
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-      if (cancelled) return;
-      setProfile(p);
+      try {
+        const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+        if (cancelled) return;
+        setProfile(p);
 
-      const { data: m } = await supabase
-        .from('members')
-        .select('family_id, families(*)')
-        .eq('user_id', session.user.id);
-      if (cancelled) return;
-      const fams = (m || []).map((row) => row.families).filter(Boolean);
-      setFamilies(fams);
+        const { data: m } = await supabase
+          .from('members')
+          .select('family_id, families(*)')
+          .eq('user_id', session.user.id);
+        if (cancelled) return;
+        const fams = (m || []).map((row) => row.families).filter(Boolean);
+        setFamilies(fams);
+      } catch (err) {
+        console.warn('Errore caricando profile/families:', err);
+      } finally {
+        if (!cancelled) setDataLoaded(true);
+      }
     })();
     return () => { cancelled = true; };
   }, [session, refreshKey]);
@@ -84,7 +94,7 @@ export default function App() {
   const lang = profile?.language || detectBrowserLang();
 
   let content;
-  if (loading) {
+  if (loading || (session && !dataLoaded)) {
     content = (
       <div className="app-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <span className="spin dark" />

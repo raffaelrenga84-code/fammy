@@ -28,7 +28,8 @@ export function usePushSubscription(session) {
         // Aspetta il service worker pronto
         const registration = await navigator.serviceWorker.ready;
 
-        // Permesso notifiche?
+        // Permesso notifiche? (in alcune webview Notification non esiste)
+        if (typeof Notification === 'undefined') return;
         if (Notification.permission !== 'granted') {
           const perm = await Notification.requestPermission();
           if (perm !== 'granted') return;
