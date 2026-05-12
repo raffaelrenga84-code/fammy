@@ -125,10 +125,38 @@ export default function AddTaskModal({
 
     setBusy(true); setErr('');
 
+    // === FIX BUG: deriva family_id dagli assegnatari ===
+    // In vista "Tutte", taskFamily inizia con families[0].id (il primo).
+    // Se l'utente seleziona membri di un'altra famiglia, il task DEVE finire
+    // nella famiglia di quei membri, non nella prima.
+    //   - 0 assegnatari -> usa taskFamily (default current view o families[0])
+    //   - tutti gli assegnatari di UNA stessa famiglia -> usa quella famiglia
+    //   - assegnatari di piu' famiglie -> chiedi conferma, poi usa la prima
+    let finalFamilyId = taskFamily;
+    if (assignees.length > 0) {
+      const assigneeMembers = members.filter((m) => assignees.includes(m.id));
+      const distinctFamilies = [...new Set(assigneeMembers.map((m) => m.family_id))];
+      if (distinctFamilies.length === 1) {
+        finalFamilyId = distinctFamilies[0];
+      } else if (distinctFamilies.length > 1) {
+        const famNames = distinctFamilies
+          .map((fid) => families.find((f) => f.id === fid)?.name || '?')
+          .join(', ');
+        const firstFamName = families.find((f) => f.id === distinctFamilies[0])?.name || '?';
+        const ok = window.confirm(
+          `Stai assegnando questo incarico a membri di famiglie diverse (${famNames}).\n\n` +
+          `L'incarico verra' creato in "${firstFamName}" e visibile solo li'.\n\n` +
+          `Continuare?`
+        );
+        if (!ok) { setBusy(false); return; }
+        finalFamilyId = distinctFamilies[0];
+      }
+    }
+
     if (isEdit) {
       // === MODIFICA ===
       const { error: e1 } = await supabase.from('tasks').update({
-        family_id: taskFamily,
+        family_id: finalFamilyId,
         title: title.trim(),
         note: note.trim() || null,
         category,
@@ -178,7 +206,7 @@ export default function AddTaskModal({
       : 'todo';
 
     const { data: task, error: e1 } = await supabase.from('tasks').insert({
-      family_id: taskFamily,
+      family_id: finalFamilyId,
       title: title.trim(),
       note: note.trim() || null,
       category,
