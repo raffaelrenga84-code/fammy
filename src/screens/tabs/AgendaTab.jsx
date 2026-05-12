@@ -175,6 +175,26 @@ export default function AgendaTab({ familyId, families, events, tasks = [], memb
 
   return (
     <>
+      {/* Family chip switcher inline (sostituisce header rimosso) */}
+      {families && families.length > 1 && (
+        <div style={{ padding: '8px 16px 4px', display: 'flex', gap: 6, overflowX: 'auto', flexWrap: 'nowrap' }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700, color: 'var(--km)', alignSelf: 'center',
+            textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 4,
+          }}>📅</span>
+          {families.map((f) => (
+            <span key={f.id} style={{
+              padding: '4px 10px', borderRadius: 100,
+              background: targetFamilyId === f.id ? 'var(--k)' : 'var(--ab)',
+              color: targetFamilyId === f.id ? 'white' : 'var(--km)',
+              fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+            }}>
+              {f.emoji} {f.name}
+            </span>
+          ))}
+        </div>
+      )}
+
       <MonthGrid
         month={viewMonth}
         events={expandedEvents}

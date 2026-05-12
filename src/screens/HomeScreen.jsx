@@ -85,7 +85,10 @@ export default function HomeScreen({ session, profile, families, onRefresh }) {
     ? members.find((m) => m.user_id === session.user.id)
     : members.find((m) => m.user_id === session.user.id && m.family_id === activeFamily);
 
-  const showHeader = activeTab !== 'profile';
+  // Nasconde l'header (titolo + family chip) su Profilo e Agenda.
+  // Su Agenda lo nascondiamo per dare più spazio al calendario; il family chip
+  // viene reso inline nelle altre tab.
+  const showHeader = activeTab !== 'profile' && activeTab !== 'agenda';
 
   return (
     <div className="scr">
