@@ -230,8 +230,13 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
         borderLeft: '6px solid #F39C12', borderRadius: 0,
         background: '#F39C1222',
       } : { borderRadius: 8 };
+  // Quando il menu priorità è aperto, alza lo stacking context della card
+  // così il popup vince su qualsiasi card sorella.
+  const stackingStyle = priorityMenu
+    ? { position: 'relative', zIndex: 1000 }
+    : {};
   return (
-    <div className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`} onClick={onClick} style={cardStyle}>
+    <div className={`tc ${task.category} ${task.status === 'done' ? 'done' : ''}`} onClick={onClick} style={{ ...cardStyle, ...stackingStyle }}>
       <div className="tc-row" style={{ position: 'relative' }}>
         <button className="tc-check" onClick={onCheck}
           title={task.status === 'done' ? 'Fatto' : 'Imposta priorità'}
@@ -245,9 +250,10 @@ function TaskCard({ task, family, assignees, statusLabel, onClick, onCheck, prio
           <div onClick={(e) => e.stopPropagation()}
             style={{
               position: 'absolute', top: '100%', left: 0, marginTop: 4,
-              background: 'white', border: '1px solid var(--sm)', borderRadius: 12,
-              padding: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 200,
+              background: '#ffffff', border: '1px solid var(--sm)', borderRadius: 12,
+              padding: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+              zIndex: 1001, display: 'flex', flexDirection: 'column', gap: 4, minWidth: 220,
+              isolation: 'isolate',
             }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--km)', textTransform: 'uppercase', padding: '4px 8px' }}>Priorità</div>
             <PrioBtn color="var(--gn)" label="🟢 Normale" onClick={() => onSetPriority('normal')} active={priority === 'normal'} />
@@ -306,13 +312,21 @@ function fmtDate(d) {
 }
 
 function PrioBtn({ color, label, onClick, active }) {
+  // Sfondo SEMPRE opaco: usiamo bianco per inattivo e una versione chiara opaca
+  // per l'attivo (mescolando il colore con bianco, no alpha) così non trapela
+  // nulla dalla card sottostante.
+  const activeBg = color.startsWith('var(')
+    ? `color-mix(in srgb, ${color} 18%, #ffffff)`
+    : `color-mix(in srgb, ${color} 18%, #ffffff)`;
   return (
     <button onClick={onClick}
       style={{
         padding: '8px 10px', borderRadius: 8,
         border: active ? `2px solid ${color}` : '1px solid var(--sm)',
-        background: active ? `${color}22` : 'white',
+        background: active ? activeBg : '#ffffff',
+        color: 'var(--ink, #1C1611)',
         fontSize: 13, fontWeight: 600, textAlign: 'left', cursor: 'pointer',
+        whiteSpace: 'nowrap',
       }}>
       {label}{active ? ' ✓' : ''}
     </button>
