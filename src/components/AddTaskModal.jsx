@@ -650,6 +650,7 @@ function MonthCalendarPicker({ selectedDays, onToggleDay, anchorDay = null }) {
 }
 
 function DateField({ value, onChange }) {
+  const { t } = useT();
   const ref = useRef(null);
   const open = () => {
     const el = ref.current;

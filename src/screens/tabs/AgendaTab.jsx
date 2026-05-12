@@ -95,7 +95,7 @@ function expandTasks(tasks) {
 }
 
 
-export default function AgendaTab({ familyId, families, events, tasks = [], members, me, isAll, onChanged }) {
+export default function AgendaTab({ familyId, families, events, tasks = [], members, me, isAll, onChanged, onSwitchFamily }) {
   const { t } = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [selTask, setSelTask] = useState(null);
@@ -175,22 +175,37 @@ export default function AgendaTab({ familyId, families, events, tasks = [], memb
 
   return (
     <>
-      {/* Family chip switcher inline (sostituisce header rimosso) */}
+      {/* Family chip switcher inline cliccabile. Include 'Tutte' quando >1 famiglia. */}
       {families && families.length > 1 && (
         <div style={{ padding: '8px 16px 4px', display: 'flex', gap: 6, overflowX: 'auto', flexWrap: 'nowrap' }}>
           <span style={{
             fontSize: 11, fontWeight: 700, color: 'var(--km)', alignSelf: 'center',
             textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 4,
           }}>📅</span>
-          {families.map((f) => (
-            <span key={f.id} style={{
-              padding: '4px 10px', borderRadius: 100,
-              background: targetFamilyId === f.id ? 'var(--k)' : 'var(--ab)',
-              color: targetFamilyId === f.id ? 'white' : 'var(--km)',
-              fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+          <button
+            type="button"
+            onClick={() => onSwitchFamily && onSwitchFamily('all')}
+            style={{
+              padding: '4px 10px', borderRadius: 100, border: 'none',
+              background: isAll ? 'var(--k)' : 'var(--ab)',
+              color: isAll ? 'white' : 'var(--km)',
+              fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
             }}>
+            {t('all_families_chip')}
+          </button>
+          {families.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => onSwitchFamily && onSwitchFamily(f.id)}
+              style={{
+                padding: '4px 10px', borderRadius: 100, border: 'none',
+                background: (!isAll && targetFamilyId === f.id) ? 'var(--k)' : 'var(--ab)',
+                color: (!isAll && targetFamilyId === f.id) ? 'white' : 'var(--km)',
+                fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
+              }}>
               {f.emoji} {f.name}
-            </span>
+            </button>
           ))}
         </div>
       )}
