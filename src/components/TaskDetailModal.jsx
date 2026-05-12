@@ -1,22 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
+import { useT } from '../lib/i18n.jsx';
 
-const CAT = [
-  { id: 'care',   emoji: '❤️', label: 'Cura' },
-  { id: 'home',   emoji: '🏠', label: 'Casa' },
-  { id: 'health', emoji: '💊', label: 'Salute' },
-  { id: 'admin',  emoji: '📋', label: 'Burocrazia' },
-  { id: 'spese',  emoji: '💶', label: 'Spese' },
-  { id: 'other',  emoji: '📌', label: 'Altro' },
-];
-
-// Solo 3 stati cliccabili. 'taken' viene impostato automaticamente
-// quando si fa "Me ne occupo io".
-const STATUS = [
-  { id: 'todo',   label: 'Da fare', color: 'var(--am)' },
-  { id: 'done',   label: 'Fatto', color: 'var(--gn)' },
-  { id: 'to_pay', label: 'Da pagare', color: 'var(--rd)' },
-];
+const CAT_EMOJI = {
+  care: '❤️', home: '🏠', health: '💊', admin: '📋', spese: '💶', other: '📌',
+};
 
 export default function TaskDetailModal({
   task, members, me,
@@ -24,6 +12,14 @@ export default function TaskDetailModal({
   onEdit,              // (task) => void  -> apre AddTaskModal in edit mode
   onOpenExpense,       // (task) => void  -> switch a Spese + apri spesa per task
 }) {
+  const { t } = useT();
+  // Solo 3 stati cliccabili. 'taken' viene impostato automaticamente
+  // quando si fa "Me ne occupo io".
+  const STATUS = [
+    { id: 'todo',   label: t('td_status_todo'),   color: 'var(--am)' },
+    { id: 'done',   label: t('td_status_done'),   color: 'var(--gn)' },
+    { id: 'to_pay', label: t('td_status_to_pay'), color: 'var(--rd)' },
+  ];
   const [title] = useState(task.title);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -67,7 +63,7 @@ export default function TaskDetailModal({
 
   const requestRemove = () => {
     if (isRecurring) { setShowDeleteConfirm(true); return; }
-    if (!confirm('Eliminare questo incarico? Verrà cancellato anche dal database.')) return;
+    if (!confirm(t('td_delete_confirm'))) return;
     doDeleteAll();
   };
 
@@ -85,7 +81,7 @@ export default function TaskDetailModal({
     }).eq('id', task.id);
     await supabase.from('task_responses').insert({
       task_id: task.id, author_id: me?.id || null,
-      text: 'Ho terminato le ricorrenze future di questo incarico',
+      text: t('td_sys_recurrence_end'),
       type: 'system',
     });
     setBusy(false); setShowDeleteConfirm(false);
@@ -112,7 +108,7 @@ export default function TaskDetailModal({
     }).eq('id', task.id);
     await supabase.from('task_responses').insert({
       task_id: task.id, author_id: me.id,
-      text: 'Me ne occupo io ✓', type: 'system',
+      text: t('td_sys_claim'), type: 'system',
     });
     setBusy(false); onChanged(); onClosed();
   };
@@ -141,7 +137,7 @@ export default function TaskDetailModal({
     const member = members.find((m) => m.id === memberId);
     await supabase.from('task_responses').insert({
       task_id: task.id, author_id: me.id,
-      text: `Ho chiesto a @${member?.name || 'Qualcuno'} di occuparsene`,
+      text: t('td_sys_delegated', { name: member?.name || t('td_someone') }),
       type: 'system',
     });
     setBusy(false); setShowDelegate(false);
@@ -156,7 +152,7 @@ export default function TaskDetailModal({
     }).eq('id', task.id);
     await supabase.from('task_responses').insert({
       task_id: task.id, author_id: me.id,
-      text: 'No, non posso occuparmene ora', type: 'system',
+      text: t('td_sys_refused'), type: 'system',
     });
     setBusy(false); onChanged(); onClosed();
   };
@@ -181,7 +177,7 @@ export default function TaskDetailModal({
 
     await supabase.from('task_responses').insert({
       task_id: task.id, author_id: me.id,
-      text: 'Ho un imprevisto — delego', type: 'system',
+      text: t('td_sys_unexpected'), type: 'system',
     });
 
     await supabase.from('tasks').update({
@@ -224,10 +220,11 @@ export default function TaskDetailModal({
               padding: 20, boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
             }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>🗑️</div>
-            <h3 style={{ marginTop: 0, marginBottom: 6 }}>Eliminare un incarico ricorrente</h3>
-            <p style={{ fontSize: 13, color: 'var(--km)', marginTop: 0 }}>
-              Questo incarico ha delle <strong>ricorrenze future</strong>. Cosa vuoi fare?
-            </p>
+            <h3 style={{ marginTop: 0, marginBottom: 6 }}>{t('td_recurring_h')}</h3>
+            <p
+              style={{ fontSize: 13, color: 'var(--km)', marginTop: 0 }}
+              dangerouslySetInnerHTML={{ __html: t('td_recurring_p') }}
+            />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
               <button onClick={doStopRecurrence} disabled={busy}
                 style={{
@@ -236,9 +233,9 @@ export default function TaskDetailModal({
                   color: 'var(--ac)', fontSize: 13, fontWeight: 700,
                   cursor: 'pointer', textAlign: 'left',
                 }}>
-                🛑 Termina solo le ricorrenze
+                {t('td_recurring_stop')}
                 <div style={{ fontSize: 11, color: 'var(--km)', fontWeight: 500, marginTop: 2 }}>
-                  Mantieni il task storico nella sua data originale, niente più ripetizioni.
+                  {t('td_recurring_stop_d')}
                 </div>
               </button>
               <button onClick={doDeleteAll} disabled={busy}
@@ -248,9 +245,9 @@ export default function TaskDetailModal({
                   color: 'var(--rd)', fontSize: 13, fontWeight: 700,
                   cursor: 'pointer', textAlign: 'left',
                 }}>
-                🗑️ Elimina tutto (incluse ricorrenze)
+                {t('td_recurring_delete')}
                 <div style={{ fontSize: 11, color: 'var(--km)', fontWeight: 500, marginTop: 2 }}>
-                  Cancella il task dal database. Operazione irreversibile.
+                  {t('td_recurring_delete_d')}
                 </div>
               </button>
               <button onClick={() => setShowDeleteConfirm(false)} disabled={busy}
@@ -260,7 +257,7 @@ export default function TaskDetailModal({
                   color: 'var(--km)', fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', marginTop: 4,
                 }}>
-                Annulla
+                {t('cancel')}
               </button>
             </div>
           </div>
@@ -268,13 +265,13 @@ export default function TaskDetailModal({
       )}
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8 }}>
-          <span style={{ fontSize: 32 }}>{CAT.find((c) => c.id === task.category)?.emoji}</span>
+          <span style={{ fontSize: 32 }}>{CAT_EMOJI[task.category] || '📌'}</span>
           <h2 style={{ flex: 1 }}>{title}</h2>
         </div>
         {task.note && <p className="modal-sub">{task.note}</p>}
         {task.due_date && (
           <p className="modal-sub">
-            📅 {new Date(task.due_date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+            📅 {new Date(task.due_date).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         )}
 
@@ -287,7 +284,7 @@ export default function TaskDetailModal({
           }}>
             <span style={{ fontSize: 18 }}>🧡</span>
             <span style={{ flex: 1 }}>
-              Ti hanno chiesto: "Lo fai tu?" — accetta se puoi, altrimenti torna a tutti.
+              {t('td_delegate_banner')}
             </span>
           </div>
         )}
@@ -298,7 +295,7 @@ export default function TaskDetailModal({
             borderRadius: 12, fontSize: 13,
           }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ac)', marginBottom: 6, textTransform: 'uppercase' }}>
-              👥 Assegnato a {assignees.length === 1 ? '' : `(${assignees.length})`}
+              👥 {t('td_assigned_to')} {assignees.length === 1 ? '' : `(${assignees.length})`}
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {assignees.map((a) => {
@@ -322,7 +319,7 @@ export default function TaskDetailModal({
             </div>
             {hasOriginalGroup && (
               <div style={{ marginTop: 8, fontSize: 11, color: 'var(--km)', fontStyle: 'italic' }}>
-                📌 Originalmente su {task.delegated_from.length} persone — al "Ho un imprevisto" tornerà a tutti.
+                {t('td_originally_on_n', { n: task.delegated_from.length })}
               </div>
             )}
           </div>
@@ -333,10 +330,10 @@ export default function TaskDetailModal({
           {isDelegateTarget && (
             <>
               <button onClick={claimOnly} disabled={busy} style={primaryBtnStyle(busy)}>
-                ✋ Me ne occupo io
+                {t('td_claim')}
               </button>
               <button onClick={refuseDelegation} disabled={busy} style={secondaryBtnStyle(busy)}>
-                🙅 No, non posso ora — torna al gruppo
+                {t('td_refuse')}
               </button>
             </>
           )}
@@ -344,10 +341,10 @@ export default function TaskDetailModal({
           {!isAssigned && !isDelegateTarget && (
             <>
               <button onClick={claimOnly} disabled={busy} style={primaryBtnStyle(busy)}>
-                ✋ Me ne occupo io
+                {t('td_claim')}
               </button>
               {otherMembers.length > 0 && (
-                <AssignGrid title="👤 Chiedi a qualcuno: Lo fai tu?" members={otherMembers} onPick={delegateToMember} busy={busy} />
+                <AssignGrid title={t('td_pick_member')} members={otherMembers} onPick={delegateToMember} busy={busy} />
               )}
             </>
           )}
@@ -356,14 +353,14 @@ export default function TaskDetailModal({
           {isCoAssignee && !isDelegateTarget && (
             <>
               <button onClick={claimOnly} disabled={busy} style={primaryBtnStyle(busy)}>
-                ✋ Me ne occupo io (rendilo solo mio)
+                {t('td_claim_co')}
               </button>
               <div style={{
                 padding: '10px 14px', background: 'var(--ab)',
                 border: '1px solid var(--sm)', borderRadius: 12,
                 fontSize: 12, color: 'var(--km)', textAlign: 'center',
               }}>
-                Sei tra i {assignees.length} responsabili. Chiunque tra voi può completarlo.
+                {t('td_co_count', { n: assignees.length })}
               </div>
             </>
           )}
@@ -375,10 +372,10 @@ export default function TaskDetailModal({
                 border: '1.5px solid var(--gn)', borderRadius: 12,
                 fontSize: 13, color: 'var(--gn)', fontWeight: 600, textAlign: 'center',
               }}>
-                ✓ Sei tu il responsabile
+                {t('td_responsible_banner')}
               </div>
               <button onClick={unassignMe} disabled={busy} style={dangerBtnStyle(busy)}>
-                🚨 Ho un imprevisto {hasOriginalGroup ? '— rimette in bacheca a tutti' : '— delego'}
+                {hasOriginalGroup ? t('td_unexpected_to_all') : t('td_unexpected_delegate')}
               </button>
               <button
                 onClick={() => setShowDelegate((v) => !v)}
@@ -389,10 +386,10 @@ export default function TaskDetailModal({
                   cursor: 'pointer',
                 }}
               >
-                👥 {showDelegate ? 'Annulla' : 'Lo fai tu? — chiedi a qualcuno (non obbligo)'}
+                {showDelegate ? t('td_ask_cancel') : t('td_ask_someone')}
               </button>
               {showDelegate && otherMembers.length > 0 && (
-                <AssignGrid title="👤 Chiedi a:" members={otherMembers} onPick={delegateToMember} busy={busy} />
+                <AssignGrid title={t('td_pick_member_short')} members={otherMembers} onPick={delegateToMember} busy={busy} />
               )}
             </>
           )}
@@ -400,15 +397,15 @@ export default function TaskDetailModal({
 
         {/* Commenti */}
         <div style={{ marginTop: 24 }}>
-          <label>Commenti ({comments.length})</label>
+          <label>{t('td_comments')} ({comments.length})</label>
           <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 8 }}>
-            {comments.length === 0 && <p style={{ color: 'var(--km)', fontSize: 13 }}>Nessun commento ancora.</p>}
+            {comments.length === 0 && <p style={{ color: 'var(--km)', fontSize: 13 }}>{t('td_no_comments')}</p>}
             {comments.map((c) => {
               const author = members.find((m) => m.id === c.author_id);
               return (
                 <div key={c.id} className="card" style={{ marginBottom: 6, padding: 10 }}>
                   <div style={{ fontSize: 12, color: 'var(--km)', marginBottom: 2 }}>
-                    <strong>{author?.name || 'Qualcuno'}</strong> · {new Date(c.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    <strong>{author?.name || t('td_someone')}</strong> · {new Date(c.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div style={{ fontSize: 14 }}>{c.text}</div>
                 </div>
@@ -416,16 +413,16 @@ export default function TaskDetailModal({
             })}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <input className="input" placeholder="Scrivi un commento…"
+            <input className="input" placeholder={t('td_comment_ph')}
               value={newComment} onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') addComment(); }} />
-            <button className="btn" onClick={addComment} disabled={busy || !newComment.trim()}>Invia</button>
+            <button className="btn" onClick={addComment} disabled={busy || !newComment.trim()}>{t('td_send')}</button>
           </div>
         </div>
 
         {/* Stato — sotto i commenti. Click = chiude il modale */}
         <div style={{ marginTop: 20 }}>
-          <label>Stato</label>
+          <label>{t('td_status')}</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {STATUS.map((s) => (
               <button key={s.id} type="button" onClick={() => updateStatus(s.id)} disabled={busy}
@@ -439,17 +436,17 @@ export default function TaskDetailModal({
             ))}
           </div>
           <p style={{ fontSize: 11, color: 'var(--km)', marginTop: 6 }}>
-            Cliccando uno stato, l'incarico viene aggiornato e la finestra si chiude.
+            {t('td_status_hint')}
           </p>
         </div>
 
         <div className="row" style={{ marginTop: 24 }}>
-          <button className="btn secondary" onClick={onClose}>Chiudi</button>
+          <button className="btn secondary" onClick={onClose}>{t('td_close')}</button>
           <button className="btn secondary" onClick={() => { onClosed(); if (typeof onEdit === 'function') onEdit(task); }}>
-            Modifica
+            {t('td_edit')}
           </button>
           {canDelete && (
-            <button className="btn danger" onClick={requestRemove} disabled={busy}>Elimina</button>
+            <button className="btn danger" onClick={requestRemove} disabled={busy}>{t('td_delete_btn')}</button>
           )}
         </div>
       </div>

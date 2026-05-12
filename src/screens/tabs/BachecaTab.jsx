@@ -34,15 +34,18 @@ export default function BachecaTab({ familyId, families, tasks, members, taskAss
     return memberIds.map((id) => members.find((m) => m.id === id)).filter(Boolean);
   };
 
-  // Un task è in "Solo le mie da fare" SOLO quando ho fatto un commit esplicito:
-  //  - delegated_to === me  → invito che devo accettare/rifiutare
-  //  - status === 'taken' AND sono unico assegnatario → ho cliccato "Me ne occupo io"
-  // L'assegnazione passiva NON conta.
+  // Un task è in "Solo le mie da fare" quando:
+  //  - delegated_to === me → qualcuno mi ha chiesto "Lo fai tu?"
+  //  - sono l'UNICO assegnatario → ho cliccato "Me ne occupo io"
+  // L'assegnazione di gruppo (più persone) resta in "Tutte".
+  // Lo status non è rilevante: anche un task 'todo' su cui sono unico
+  // responsabile è "mio". Il flag 'taken' è un dettaglio di workflow,
+  // non un criterio di visibilità.
   const isMine = (task) => {
-    if (task.delegated_to && me && task.delegated_to === me.id) return true;
-    if (task.status !== 'taken') return false;
+    if (!me) return false;
+    if (task.delegated_to && task.delegated_to === me.id) return true;
     const list = assigneesForTask(task.id);
-    return list.length === 1 && list[0].user_id === session.user.id;
+    return list.length === 1 && list[0].id === me.id;
   };
 
   const todos = tasks.filter((task) => task.status !== 'done');

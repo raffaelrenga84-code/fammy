@@ -1,7 +1,12 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" translate="no">
 <head>
   <meta charset="UTF-8" />
+
+  <!-- Disattiva traduttori automatici (Google/Edge/Yandex): manipolano il DOM
+       e fanno crashare React con "removeChild not a child of this node". -->
+  <meta name="google" content="notranslate">
+  <meta http-equiv="Content-Language" content="it">
 
   <!-- ICONS & MANIFEST -->
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -21,8 +26,8 @@
   <title>FAMMY</title>
 </head>
 
-  <body>
-    <div id="root"></div>
+  <body class="notranslate" translate="no">
+    <div id="root" class="notranslate" translate="no"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
