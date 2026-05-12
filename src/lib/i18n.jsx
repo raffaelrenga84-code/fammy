@@ -19,6 +19,15 @@ export const T = {
     // Common
     cancel: 'Annulla', save: 'Salva', close: 'Chiudi', delete: 'Elimina',
     edit: 'Modifica', add: 'Aggiungi', logout: 'Esci', loading: 'Caricamento…',
+    next_arrow: 'Avanti →', back_arrow: '← Indietro',
+    only_for_me: 'Solo per me', none_selected: 'Nessuno selezionato',
+    select_all: '+ Seleziona tutti', deselect_all: '✓ Deseleziona tutti',
+    tap_choose_date: 'Tocca per scegliere una data',
+    note_optional: 'Nota (opzionale)', note_placeholder: 'Dettagli, indirizzo, importi…',
+    add_recurrence: '🔄 Aggiungi ricorrenza', recurs_n_times: '🔄 Ricorre {n}x',
+    attach_photo_optional: 'Allega foto (opzionale)', take_or_attach_photo: '📷 Scatta o allega Foto',
+    split_hint_empty: '💡 Se non selezioni nessuno, questa spesa rimarrà solo nel tuo promemoria personale.',
+    expense_for_task: 'Spesa per incarico',
 
     // Login
     app_tagline: "L'app per coordinare la tua famiglia.\nSenza chat infinite.",
@@ -251,6 +260,15 @@ export const T = {
   en: {
     cancel: 'Cancel', save: 'Save', close: 'Close', delete: 'Delete',
     edit: 'Edit', add: 'Add', logout: 'Sign out', loading: 'Loading…',
+    next_arrow: 'Next →', back_arrow: '← Back',
+    only_for_me: 'Only for me', none_selected: 'None selected',
+    select_all: '+ Select all', deselect_all: '✓ Deselect all',
+    tap_choose_date: 'Tap to choose a date',
+    note_optional: 'Note (optional)', note_placeholder: 'Details, address, amounts…',
+    add_recurrence: '🔄 Add recurrence', recurs_n_times: '🔄 Repeats {n}x',
+    attach_photo_optional: 'Attach photo (optional)', take_or_attach_photo: '📷 Take or attach photo',
+    split_hint_empty: '💡 If you select no one, this expense stays in your personal log only.',
+    expense_for_task: 'Expense for task',
 
     app_tagline: 'The app to coordinate your family.\nNo more endless chats.',
     name_label: 'What\'s your name?', name_ph: 'e.g. Mary',
@@ -464,6 +482,15 @@ export const T = {
   fr: {
     cancel: 'Annuler', save: 'Enregistrer', close: 'Fermer', delete: 'Supprimer',
     edit: 'Modifier', add: 'Ajouter', logout: 'Se déconnecter', loading: 'Chargement…',
+    next_arrow: 'Suivant →', back_arrow: '← Retour',
+    only_for_me: 'Pour moi seulement', none_selected: 'Aucun sélectionné',
+    select_all: '+ Tout sélectionner', deselect_all: '✓ Tout désélectionner',
+    tap_choose_date: 'Touchez pour choisir une date',
+    note_optional: 'Note (optionnelle)', note_placeholder: 'Détails, adresse, montants…',
+    add_recurrence: '🔄 Ajouter récurrence', recurs_n_times: '🔄 Se répète {n}x',
+    attach_photo_optional: 'Joindre photo (optionnelle)', take_or_attach_photo: '📷 Prendre ou joindre photo',
+    split_hint_empty: '💡 Si tu ne sélectionnes personne, cette dépense reste dans ton pense-bête personnel.',
+    expense_for_task: 'Dépense pour tâche',
 
     app_tagline: "L'appli pour coordonner ta famille.\nFini les chats interminables.",
     name_label: "Comment tu t'appelles ?", name_ph: 'ex. Marie',
@@ -720,6 +747,15 @@ export const T = {
   de: {
     cancel: 'Abbrechen', save: 'Speichern', close: 'Schließen', delete: 'Löschen',
     edit: 'Bearbeiten', add: 'Hinzufügen', logout: 'Abmelden', loading: 'Laden…',
+    next_arrow: 'Weiter →', back_arrow: '← Zurück',
+    only_for_me: 'Nur für mich', none_selected: 'Keiner ausgewählt',
+    select_all: '+ Alle auswählen', deselect_all: '✓ Alle abwählen',
+    tap_choose_date: 'Tippe um Datum zu wählen',
+    note_optional: 'Notiz (optional)', note_placeholder: 'Details, Adresse, Beträge…',
+    add_recurrence: '🔄 Wiederholung hinzufügen', recurs_n_times: '🔄 Wiederholt {n}x',
+    attach_photo_optional: 'Foto anhängen (optional)', take_or_attach_photo: '📷 Foto aufnehmen oder anhängen',
+    split_hint_empty: '💡 Wenn du niemanden auswählst, bleibt diese Ausgabe nur in deinem persönlichen Verzeichnis.',
+    expense_for_task: 'Ausgabe für Aufgabe',
 
     app_tagline: 'Die App, um deine Familie zu koordinieren.\nKeine endlosen Chats mehr.',
     name_label: 'Wie heißt du?', name_ph: 'z.B. Maria',

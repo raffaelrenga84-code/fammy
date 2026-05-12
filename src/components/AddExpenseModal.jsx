@@ -162,7 +162,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
             <span style={{ fontSize: 18 }}>📋</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ac)', textTransform: 'uppercase' }}>
-                Spesa per incarico
+                {t('expense_for_task')}
               </div>
               <div style={{ fontWeight: 600 }}>{prefilledTask.title}</div>
             </div>
@@ -211,7 +211,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
             <label style={{ marginBottom: 4 }}>{t('expenses_split_label')}</label>
             <div style={{ fontSize: 11, color: 'var(--km)', marginBottom: 12, lineHeight: 1.4 }}>
               {splitMembers.length === 0
-                ? '💡 Se non selezioni nessuno, questa spesa rimarrà solo nel tuo promemoria personale.'
+                ? t('split_hint_empty')
                 : t('expenses_split_hint')}
             </div>
 
@@ -320,7 +320,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
           {/* Foto/Allegati */}
           <div style={{ marginTop: 20 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-              <span>📸 Allega foto <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
+              <span>{t('attach_photo_optional')} <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
             </label>
             <input type="file" id="expense-file-input" multiple accept="image/*" capture
               onChange={handleFileSelect}
@@ -333,7 +333,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
               }}
               onMouseEnter={(e) => e.target.style.borderColor = 'var(--ac)'}
               onMouseLeave={(e) => e.target.style.borderColor = 'var(--sm)'}>
-              📷 Scatta o allega Foto
+              {t('take_or_attach_photo')}
             </button>
 
             {attachments.length > 0 && (

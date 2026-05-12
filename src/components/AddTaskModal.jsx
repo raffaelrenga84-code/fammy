@@ -323,7 +323,7 @@ export default function AddTaskModal({
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, fontSize: 13 }}>{g.family.name}</div>
                           <div style={{ fontSize: 11, color: 'var(--km)' }}>
-                            {selectedCount > 0 ? `${selectedCount}/${g.members.length} selezionati` : 'Nessuno selezionato'}
+                            {selectedCount > 0 ? `${selectedCount}/${g.members.length} selezionati` : t('none_selected')}
                           </div>
                         </div>
                         <span style={{ fontSize: 18, color: 'var(--km)', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
@@ -363,8 +363,8 @@ export default function AddTaskModal({
               </div>
 
               <div className="row" style={{ marginTop: 20 }}>
-                <button type="button" className="btn secondary" onClick={() => setStep(1)}>← Indietro</button>
-                <button type="button" className="btn" onClick={() => setStep(3)}>Avanti →</button>
+                <button type="button" className="btn secondary" onClick={() => setStep(1)}>{t('back_arrow')}</button>
+                <button type="button" className="btn" onClick={() => setStep(3)}>{t('next_arrow')}</button>
               </div>
             </>
           )}
@@ -395,7 +395,7 @@ export default function AddTaskModal({
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}>
                     <span>
-                      {recurringDays.length > 0 ? `🔄 Ricorre ${recurringDays.length}x` : '🔄 Aggiungi ricorrenza'}
+                      {recurringDays.length > 0 ? `🔄 Ricorre ${recurringDays.length}x` : t('add_recurrence')}
                     </span>
                     <span style={{ fontSize: 18, color: 'var(--km)', transform: expandRecurring ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
                   </button>
@@ -532,7 +532,7 @@ export default function AddTaskModal({
               </div>
 
               <div className="row" style={{ marginTop: 20 }}>
-                <button type="button" className="btn secondary" onClick={() => setStep(2)}>← Indietro</button>
+                <button type="button" className="btn secondary" onClick={() => setStep(2)}>{t('back_arrow')}</button>
                 <button type="submit" className="btn" disabled={busy}>
                   {busy ? <span className="spin" /> : (isEdit ? 'Salva modifiche' : t('add'))}
                 </button>
@@ -676,7 +676,7 @@ function DateField({ value, onChange }) {
         }}>
         <span style={{ fontSize: 18 }}>📅</span>
         <span style={{ flex: 1, textTransform: value ? 'capitalize' : 'none' }}>
-          {display || 'Tocca per scegliere una data'}
+          {display || t('tap_choose_date')}
         </span>
         {value && (
           <span role="button" onClick={(e) => { e.stopPropagation(); onChange(''); }}

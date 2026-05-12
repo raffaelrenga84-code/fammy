@@ -190,7 +190,7 @@ export default function AgendaTab({ familyId, families, events, tasks = [], memb
           {/* Export singola famiglia visibile sempre se c'è solo 1 famiglia, anche in Tutte */}
           {(!isAll || families.length === 1) && (
             <button className="btn full secondary" onClick={() => setShowCalendar(true)}>
-              📅 {t('family_export_calendar')}
+              {t('family_export_calendar')}
             </button>
           )}
           {families.length > 1 && (
@@ -325,14 +325,14 @@ function MonthGrid({ month, events, tasks = [], selectedDay, onSelectDay, onPrev
   return (
     <div className="month-grid-wrap">
       <div className="month-header">
-        <button className="month-nav" onClick={onPrev} style={{ fontSize: 20 }}>‹</button>
-        <span className="month-title" style={{ fontSize: 20, fontWeight: 700 }}>{Array.isArray(months) ? months[m] : ''} {year}</span>
-        <button className="month-nav" onClick={onNext} style={{ fontSize: 20 }}>›</button>
+        <button className="month-nav" onClick={onPrev} style={{ fontSize: 18 }}>‹</button>
+        <span className="month-title" style={{ fontSize: 16, fontWeight: 700 }}>{Array.isArray(months) ? months[m] : ''} {year}</span>
+        <button className="month-nav" onClick={onNext} style={{ fontSize: 18 }}>›</button>
       </div>
       <div className="month-weekdays">
-        {Array.isArray(weekdays) && weekdays.map((w, i) => <div key={i} className="month-weekday" style={{ fontSize: 14, fontWeight: 700, padding: '12px 8px' }}>{w}</div>)}
+        {Array.isArray(weekdays) && weekdays.map((w, i) => <div key={i} className="month-weekday" style={{ fontSize: 11, fontWeight: 700, padding: '6px 4px' }}>{w}</div>)}
       </div>
-      <div className="month-cells" style={{ gap: 8 }}>
+      <div className="month-cells" style={{ gap: 4 }}>
         {cells.map((d, i) => {
           const dayItems = d ? itemsByDay[d] : null;
           const eventCount = dayItems?.events || 0;
@@ -350,20 +350,20 @@ function MonthGrid({ month, events, tasks = [], selectedDay, onSelectDay, onPrev
               disabled={!d}
               onClick={() => d && onSelectDay(new Date(year, m, d))}
               style={{
-                padding: '12px 8px',
-                minHeight: 70,
+                padding: '6px 4px',
+                minHeight: 44,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 background: hasItems ? 'var(--am)11' : isPast ? '#F5F2EC' : 'white',
                 border: today_b ? '2px solid var(--am)' : isSelected ? '2px solid var(--ac)' : hasItems ? '2px solid var(--am)33' : '1px solid var(--sm)',
-                borderRadius: 12,
+                borderRadius: 8,
                 cursor: d ? 'pointer' : 'default',
                 opacity: isPast && !hasItems ? 0.45 : 1,
                 transition: 'all 0.2s ease',
               }}>
-              {d && <span className="month-day" style={{ fontSize: 18, fontWeight: 700, color: isPast ? 'var(--km)' : 'var(--k)' }}>{d}</span>}
+              {d && <span className="month-day" style={{ fontSize: 14, fontWeight: 700, color: isPast ? 'var(--km)' : 'var(--k)' }}>{d}</span>}
               {hasItems && (
                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
                   {/* Pallini blu per eventi, arancio per task */}
