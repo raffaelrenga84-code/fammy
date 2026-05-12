@@ -28,6 +28,8 @@ export const T = {
     attach_photo_optional: 'Allega foto (opzionale)', take_or_attach_photo: '📷 Scatta o allega Foto',
     split_hint_empty: '💡 Se non selezioni nessuno, questa spesa rimarrà solo nel tuo promemoria personale.',
     expense_for_task: 'Spesa per incarico',
+    n_selected: '{n}/{m} selezionati',
+    attach_photo: 'Allega foto', optional_label: 'opzionale',
 
     // Login
     app_tagline: "L'app per coordinare la tua famiglia.\nSenza chat infinite.",
@@ -269,6 +271,8 @@ export const T = {
     attach_photo_optional: 'Attach photo (optional)', take_or_attach_photo: '📷 Take or attach photo',
     split_hint_empty: '💡 If you select no one, this expense stays in your personal log only.',
     expense_for_task: 'Expense for task',
+    n_selected: '{n}/{m} selected',
+    attach_photo: 'Attach photo', optional_label: 'optional',
 
     app_tagline: 'The app to coordinate your family.\nNo more endless chats.',
     name_label: 'What\'s your name?', name_ph: 'e.g. Mary',
@@ -491,6 +495,8 @@ export const T = {
     attach_photo_optional: 'Joindre photo (optionnelle)', take_or_attach_photo: '📷 Prendre ou joindre photo',
     split_hint_empty: '💡 Si tu ne sélectionnes personne, cette dépense reste dans ton pense-bête personnel.',
     expense_for_task: 'Dépense pour tâche',
+    n_selected: '{n}/{m} sélectionnés',
+    attach_photo: 'Joindre photo', optional_label: 'optionnelle',
 
     app_tagline: "L'appli pour coordonner ta famille.\nFini les chats interminables.",
     name_label: "Comment tu t'appelles ?", name_ph: 'ex. Marie',
@@ -756,6 +762,8 @@ export const T = {
     attach_photo_optional: 'Foto anhängen (optional)', take_or_attach_photo: '📷 Foto aufnehmen oder anhängen',
     split_hint_empty: '💡 Wenn du niemanden auswählst, bleibt diese Ausgabe nur in deinem persönlichen Verzeichnis.',
     expense_for_task: 'Ausgabe für Aufgabe',
+    n_selected: '{n}/{m} ausgewählt',
+    attach_photo: 'Foto anhängen', optional_label: 'optional',
 
     app_tagline: 'Die App, um deine Familie zu koordinieren.\nKeine endlosen Chats mehr.',
     name_label: 'Wie heißt du?', name_ph: 'z.B. Maria',

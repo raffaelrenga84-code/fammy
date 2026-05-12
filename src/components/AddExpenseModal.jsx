@@ -245,7 +245,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 600, fontSize: 12 }}>{g.family.name}</div>
                       <div style={{ fontSize: 11, color: 'var(--km)' }}>
-                        {selectedCount > 0 ? `${selectedCount}/${g.members.length} selezionati` : 'Nessuno selezionato'}
+                        {selectedCount > 0 ? t('n_selected', { n: selectedCount, m: g.members.length }) : t('none_selected')}
                       </div>
                     </div>
                     <span style={{ fontSize: 18, color: 'var(--km)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
@@ -259,7 +259,7 @@ export default function AddExpenseModal({ familyId, families = [], members, defa
                       color: allSelected ? 'white' : 'var(--k)',
                       fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     }}>
-                    {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
+                    {allSelected ? t('deselect_all') : t('select_all')}
                   </button>
 
                   {/* Contenuto tendina */}

@@ -270,7 +270,7 @@ export default function AddTaskModal({
               <div className="row" style={{ marginTop: 20 }}>
                 <button type="button" className="btn secondary" onClick={onClose}>{t('cancel')}</button>
                 <button type="button" className="btn" onClick={() => setStep(2)} disabled={!title.trim()}>
-                  Avanti →
+                  {t('next_arrow')}
                 </button>
               </div>
             </>
@@ -303,7 +303,7 @@ export default function AddTaskModal({
                       cursor: 'pointer', fontSize: 13, fontWeight: 600,
                       color: onlyForMe ? 'var(--ac)' : 'var(--k)',
                     }}>
-                    {onlyForMe ? '✓ ' : '+ '}Solo per me
+                    {onlyForMe ? '✓ ' : '+ '}{t('only_for_me')}
                   </button>
                 </div>
 
@@ -323,7 +323,7 @@ export default function AddTaskModal({
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, fontSize: 13 }}>{g.family.name}</div>
                           <div style={{ fontSize: 11, color: 'var(--km)' }}>
-                            {selectedCount > 0 ? `${selectedCount}/${g.members.length} selezionati` : t('none_selected')}
+                            {selectedCount > 0 ? t('n_selected', { n: selectedCount, m: g.members.length }) : t('none_selected')}
                           </div>
                         </div>
                         <span style={{ fontSize: 18, color: 'var(--km)', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>›</span>
@@ -336,7 +336,7 @@ export default function AddTaskModal({
                           color: allSelected ? 'white' : 'var(--k)',
                           fontSize: 12, fontWeight: 600, cursor: 'pointer',
                         }}>
-                        {allSelected ? '✓ Deseleziona tutti' : '+ Seleziona tutti'}
+                        {allSelected ? t('deselect_all') : t('select_all')}
                       </button>
                       {isExpanded && (
                         <div style={{ padding: 10, background: 'var(--ab)', borderTop: '1px solid var(--sm)' }}>
@@ -381,7 +381,7 @@ export default function AddTaskModal({
                   </div>
                 )}
 
-                <label htmlFor="note">Nota (opzionale)</label>
+                <label htmlFor="note">{t('note_optional')}</label>
                 <textarea id="note" className="input" rows={3}
                   placeholder="Dettagli, indirizzo, importi…"
                   value={note} onChange={(e) => setNote(e.target.value)} />
@@ -499,7 +499,7 @@ export default function AddTaskModal({
 
                 <div style={{ marginTop: 20 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                    <span>📸 Allega foto <span style={{ color: 'var(--km)', fontSize: 11 }}>(opzionale)</span></span>
+                    <span>📸 {t('attach_photo')} <span style={{ color: 'var(--km)', fontSize: 11 }}>({t('optional_label')})</span></span>
                   </label>
                   <input type="file" id="file-input" multiple accept="image/*" capture
                     onChange={handleFileSelect} style={{ display: 'none' }} />
@@ -509,7 +509,7 @@ export default function AddTaskModal({
                       background: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600,
                       color: 'var(--ac)', transition: 'all 0.2s ease',
                     }}>
-                    📷 Scatta o allega Foto
+                    {t('take_or_attach_photo')}
                   </button>
                   {attachments.length > 0 && (
                     <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: 8 }}>
