@@ -383,7 +383,7 @@ export default function AddTaskModal({
 
                 <label htmlFor="note">{t('note_optional')}</label>
                 <textarea id="note" className="input" rows={3}
-                  placeholder="Dettagli, indirizzo, importi…"
+                  placeholder={t('note_placeholder')}
                   value={note} onChange={(e) => setNote(e.target.value)} />
 
                 <div style={{ marginTop: 16 }}>
