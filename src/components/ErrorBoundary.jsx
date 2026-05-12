@@ -3,13 +3,13 @@ import { Component } from 'react';
 /**
  * Error boundary che cattura qualsiasi errore di rendering React
  * e mostra un messaggio in chiaro nella lingua del device.
- * Indipendente da i18n.jsx (così funziona anche se i18n è quello rotto).
+ * Indipendente da i18n.jsx (cosi' funziona anche se i18n e' rotto).
  */
 
 const ERR_T = {
   it: {
     title: 'Qualcosa è andato storto',
-    desc: "FAMMY ha incontrato un errore inaspettato. Prova a ricaricare la pagina o, se il problema persiste, pulisci i dati locali e rifai login.",
+    desc: 'FAMMY ha incontrato un errore inaspettato. Prova a ricaricare la pagina o, se il problema persiste, pulisci i dati locali e rifai login.',
     reload: '🔄 Ricarica pagina',
     clear: '🧹 Pulisci dati e logout',
     retry: 'Riprova senza ricaricare',
@@ -25,7 +25,7 @@ const ERR_T = {
   },
   en: {
     title: 'Something went wrong',
-    desc: "FAMMY encountered an unexpected error. Try reloading the page, or if the problem persists, clear local data and log in again.",
+    desc: 'FAMMY encountered an unexpected error. Try reloading the page, or if the problem persists, clear local data and log in again.',
     reload: '🔄 Reload page',
     clear: '🧹 Clear data and log out',
     retry: 'Retry without reloading',
@@ -133,6 +133,7 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       const stack = (this.state.error?.stack || String(this.state.error)).slice(0, 800);
+      const message = String(this.state.error?.message || this.state.error || '').slice(0, 400);
       const t = this.tr;
       return (
         <div style={{
@@ -144,6 +145,21 @@ export default class ErrorBoundary extends Component {
           <div style={{ fontSize: 32, marginBottom: 8 }}>⚠️</div>
           <h2 style={{ marginTop: 0 }}>{t.title}</h2>
           <p style={{ color: '#666' }}>{t.desc}</p>
+          {message && (
+            <div style={{
+              marginTop: 12,
+              padding: 12,
+              background: '#FFF3E0',
+              border: '1.5px solid #E67E22',
+              borderRadius: 8,
+              fontSize: 13,
+              fontFamily: 'monospace',
+              color: '#C0392B',
+              wordBreak: 'break-word',
+            }}>
+              {message}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
             <button onClick={() => window.location.reload()}
               style={{
