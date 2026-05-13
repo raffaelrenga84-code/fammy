@@ -58,13 +58,16 @@ begin
     return json_build_object('success', false, 'error', 'I due membri sono in famiglie diverse.');
   end if;
 
-  -- Solo un creatore della famiglia (o service_role) può fare il merge
+  -- Autorizzazione: creatore della famiglia, service_role, oppure superuser
+  -- (postgres dal SQL Editor di Supabase: auth.role() lì è vuoto)
   select exists (
     select 1 from families f
     where f.id = ph.family_id
       and (
         f.created_by = auth.uid()
         or auth.role() = 'service_role'
+        or session_user in ('postgres', 'supabase_admin')
+        or current_user  in ('postgres', 'supabase_admin')
       )
   ) into caller_is_owner;
 
